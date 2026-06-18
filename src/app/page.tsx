@@ -35,9 +35,12 @@ function Hero() {
 
       {/* Content — centered as the main event */}
       <div className="relative z-20 w-full mx-auto max-w-3xl px-4 sm:px-6 py-20 md:py-28 text-center">
-        <h1 className="font-display text-[clamp(2.75rem,6vw,6rem)] leading-[0.9] text-paper">
-          {el.home.heroApplyTitle}
+        <h1 className="font-display text-[clamp(1.75rem,4vw,3.5rem)] leading-[0.9] text-paper">
+          Ολοκληρωμένη προετοιμασία για τα Πρότυπα
         </h1>
+        <p className="mt-4 font-display text-[clamp(1.25rem,2.5vw,2rem)] text-paper/80">
+          Σταθερή πρόοδος
+        </p>
 
         <div className="mt-10 md:mt-14 flex flex-col items-center gap-4 max-w-sm mx-auto">
           <Link

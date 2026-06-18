@@ -84,12 +84,12 @@ function Values() {
       <img src="/TransparentAssets/Asset 12.png" alt="" aria-hidden="true" className="pointer-events-none select-none absolute top-10 right-8 w-28 md:w-44 opacity-60 -rotate-6 hidden sm:block" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-start">
-          <aside className="lg:col-span-4">
+          <aside className="lg:col-span-5">
             <div className="lg:sticky lg:top-24">
               <div className="text-[10px] font-bold tracking-[0.25em] uppercase text-[#c8ff00] mb-4">
                 {el.about.missionEyebrow}
               </div>
-              <h2 className="font-display text-3xl md:text-5xl leading-tight text-white">
+              <h2 className="font-display text-3xl md:text-5xl leading-tight text-white [word-break:normal] [hyphens:none]">
                 {el.about.missionTitle}
               </h2>
               <p className="mt-6 text-base text-white/80 leading-relaxed">
@@ -100,7 +100,7 @@ function Values() {
               </div>
             </div>
           </aside>
-          <div className="lg:col-span-8">
+          <div className="lg:col-span-7">
             <ul className="divide-y divide-white/15 border-y border-white/15">
               {el.about.values.map((v, i) => (
                 <li key={i} className="group py-8">
