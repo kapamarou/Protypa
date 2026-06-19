@@ -140,7 +140,7 @@ export default async function SchoolPage({
                   href={`/account/school?sim=${s.id}`}
                   className={`px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors ${
                     selectedSim?.id === s.id
-                      ? "bg-ink text-white border-ink"
+                      ? "bg-[#c8ff00] text-ink border-[#c8ff00]"
                       : "border-ink/15 text-ink/70 hover:border-ink/30"
                   }`}>
                   Δ{s.number}

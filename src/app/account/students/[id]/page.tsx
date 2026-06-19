@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Student, StudentSimulationGrade, Simulation, SimulationQuestionTag } from "@/lib/types";
 import { computeScore, gradeCountsForStats } from "@/lib/scoring";
 import PrintButton from "./PrintButton";
+import AISummaryCard from "./AISummaryCard";
 
 type PeerGrade = { student_id: string; simulation_id: string; score: number; school_simulation_id: string; wrong_questions?: number[] | null };
 type Subject = "all" | "greek" | "math";
@@ -15,6 +16,7 @@ function buildPreviewData(id: string): {
   grades: (StudentSimulationGrade & { simulations: Simulation })[];
   allGrades: PeerGrade[];
   tagMap: Map<string, Map<number, string>>;
+  difficultyMap: Map<string, Map<number, number>>;
 } | null {
   const STUDENTS: Record<string, Student> = {
     s1: { id: "s1", school_id: "preview", first_name: "Μαρία",   last_name: "Παπαδοπούλου", class_year: "Γυμνάσιο", subjects: ["greek","math"], notes: "Πολύ καλή στη Γλώσσα", mother_name: null, father_name: null, gender: null, created_at: "", updated_at: "" },
@@ -119,7 +121,7 @@ function buildPreviewData(id: string): {
     tagMap.set(sim.id, m);
   }
 
-  return { student, grades, allGrades, tagMap };
+  return { student, grades, allGrades, tagMap, difficultyMap: new Map() };
 }
 
 export default async function StudentProfilePage({
@@ -139,6 +141,7 @@ export default async function StudentProfilePage({
   let student: Student;
   let grades: (StudentSimulationGrade & { simulations: Simulation })[];
   let tagMap: Map<string, Map<number, string>>;
+  let difficultyMap: Map<string, Map<number, number>>;
   let allGrades: PeerGrade[];
   let isPreview = false;
 
@@ -150,10 +153,11 @@ export default async function StudentProfilePage({
     student = preview.student;
     grades = preview.grades;
     tagMap = preview.tagMap;
+    difficultyMap = preview.difficultyMap;
     allGrades = preview.allGrades;
   } else {
     const { data: studentRow } = await supabase
-      .from("students").select("*").eq("id", id).eq("school_id", user.id).maybeSingle();
+      .from("students").select("*, ai_summary, ai_summary_generated_at").eq("id", id).eq("school_id", user.id).maybeSingle();
     if (!studentRow) notFound();
     student = studentRow as Student;
 
@@ -171,9 +175,14 @@ export default async function StudentProfilePage({
     const tags = (tagsRaw ?? []) as SimulationQuestionTag[];
 
     tagMap = new Map<string, Map<number, string>>();
+    difficultyMap = new Map<string, Map<number, number>>();
     for (const t of tags) {
       if (!tagMap.has(t.simulation_id)) tagMap.set(t.simulation_id, new Map());
       tagMap.get(t.simulation_id)!.set(t.question_number, t.category);
+      if (t.difficulty != null) {
+        if (!difficultyMap.has(t.simulation_id)) difficultyMap.set(t.simulation_id, new Map());
+        difficultyMap.get(t.simulation_id)!.set(t.question_number, t.difficulty);
+      }
     }
 
     const schoolSimIds = grades.map((g) => g.school_simulation_id);
@@ -238,6 +247,25 @@ export default async function StudentProfilePage({
       if ((grade.wrong_questions ?? []).includes(q)) categoryStats[cat].wrong++;
     }
   }
+
+  // Difficulty stats — % correct per difficulty level (1=easy, 2=medium, 3=hard)
+  const difficultyStats: Record<number, { right: number; wrong: number }> = { 1: { right: 0, wrong: 0 }, 2: { right: 0, wrong: 0 }, 3: { right: 0, wrong: 0 } };
+  for (const grade of grades) {
+    const sim = grade.simulations;
+    if (!sim) continue;
+    if (!gradeCountsForStats(grade.submitted_at, sim.grading_closes_at)) continue;
+    const simDiffMap = difficultyMap.get(grade.simulation_id);
+    if (!simDiffMap) continue;
+    const total = sim.greek_questions + sim.math_questions;
+    for (let q = 1; q <= total; q++) {
+      if (!inSubject(q, sim, subject)) continue;
+      const diff = simDiffMap.get(q);
+      if (!diff) continue;
+      if ((grade.wrong_questions ?? []).includes(q)) difficultyStats[diff].wrong++;
+      else difficultyStats[diff].right++;
+    }
+  }
+  const hasDifficultyData = ([1, 2, 3] as const).some((d) => difficultyStats[d].right + difficultyStats[d].wrong > 0);
 
   const avgScore = eligibleGrades.length ? Math.round(eligibleGrades.reduce((s, g) => s + g.score, 0) / eligibleGrades.length) : null;
   const bestScore = eligibleGrades.length ? Math.max(...eligibleGrades.map((g) => g.score)) : null;
@@ -379,6 +407,37 @@ export default async function StudentProfilePage({
             </div>
           </section>
 
+          {/* Difficulty bars */}
+          {hasDifficultyData && (
+            <section>
+              <div className="flex items-baseline justify-between mb-3">
+                <h2 className="text-[11px] font-semibold tracking-wider uppercase text-ink/55">Επίδοση ανά δυσκολία</h2>
+              </div>
+              <div className="border border-ink/10 rounded-md divide-y divide-ink/8">
+                {([1, 2, 3] as const).map((d) => {
+                  const { right, wrong } = difficultyStats[d];
+                  const total = right + wrong;
+                  if (total === 0) return null;
+                  const pct = Math.round((right / total) * 100);
+                  const label = d === 1 ? "Εύκολες" : d === 2 ? "Μέτριες" : "Δύσκολες";
+                  const barColor = pct >= 70 ? "#22c55e" : pct >= 45 ? "#f59e0b" : "#ef4444";
+                  return (
+                    <div key={d} className="flex items-center gap-3 px-4 py-2.5">
+                      <div className="w-24 text-sm text-ink flex-shrink-0">{label}</div>
+                      <div className="flex-1 h-1.5 rounded bg-ink/8 overflow-hidden">
+                        <div className="h-full" style={{ width: `${pct}%`, background: barColor }} />
+                      </div>
+                      <div className="w-28 text-right text-xs tabular">
+                        <span style={{ color: barColor }}>{pct}%</span>
+                        <span className="text-ink/40 ml-1">({right}/{total} σωστές)</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
           {/* Exam history */}
           <section>
             <div className="flex items-baseline justify-between mb-3">
@@ -498,6 +557,15 @@ export default async function StudentProfilePage({
             </div>
           </section>
         </>
+      )}
+
+      {/* AI Summary — only for real accounts, not preview */}
+      {!isPreview && (
+        <AISummaryCard
+          studentId={student.id}
+          initialSummary={(student as Student & { ai_summary?: string | null }).ai_summary ?? null}
+          initialGeneratedAt={(student as Student & { ai_summary_generated_at?: string | null }).ai_summary_generated_at ?? null}
+        />
       )}
     </div>
   );

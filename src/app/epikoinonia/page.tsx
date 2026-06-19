@@ -1,11 +1,13 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { el } from "@/lib/i18n/el";
 
 export default function ContactPage() {
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   return (
     <div>
@@ -45,16 +47,36 @@ export default function ContactPage() {
               </div>
 
               {sent ? (
-                <SuccessState onReset={() => setSent(false)} />
+                <SuccessState onReset={() => { setSent(false); formRef.current?.reset(); }} />
               ) : (
                 <form
+                  ref={formRef}
                   className="space-y-8"
                   onSubmit={async (e) => {
                     e.preventDefault();
+                    setError(null);
                     setSubmitting(true);
-                    await new Promise((r) => setTimeout(r, 600));
-                    setSubmitting(false);
-                    setSent(true);
+                    const data = new FormData(e.currentTarget);
+                    try {
+                      const res = await fetch("/api/contact", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          name:    data.get("name"),
+                          email:   data.get("email"),
+                          school:  data.get("school") || undefined,
+                          subject: data.get("subject"),
+                          message: data.get("message"),
+                        }),
+                      });
+                      const json = await res.json();
+                      if (!res.ok) throw new Error(json.error ?? "Σφάλμα αποστολής.");
+                      setSent(true);
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : "Σφάλμα αποστολής. Δοκιμάστε ξανά.");
+                    } finally {
+                      setSubmitting(false);
+                    }
                   }}
                 >
                   <div className="grid sm:grid-cols-2 gap-8">
@@ -64,6 +86,12 @@ export default function ContactPage() {
                   <Field label={el.contact.school} name="school" placeholder={el.contact.schoolPlaceholder} />
                   <SelectField label={el.contact.subject} name="subject" placeholder={el.contact.subjectPlaceholder} options={el.contact.subjectOptions} />
                   <TextareaField label={el.contact.message} name="message" placeholder={el.contact.messagePlaceholder} />
+
+                  {error && (
+                    <div className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-xl">
+                      {error}
+                    </div>
+                  )}
 
                   <button
                     type="submit"
