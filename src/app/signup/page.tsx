@@ -56,19 +56,33 @@ export default function SignUpPage() {
               setError(null);
               setInfo(null);
               setLoading(true);
-              const supabase = createSupabaseBrowserClient();
-              const { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                  data: {
-                    full_name: fullName,
-                    school_name: accountType === "school" ? schoolName : null,
-                    account_type: accountType,
+                const supabase = createSupabaseBrowserClient();
+
+                console.log("[signup] submitting:", email);
+
+                const { data, error } = await supabase.auth.signUp({
+                  email,
+                  password,
+                  options: {
+                    data: {
+                      full_name: fullName,
+                      school_name: accountType === "school" ? schoolName : null,
+                      account_type: accountType,
+                    },
                   },
-                },
-              });
-              setLoading(false);
+                });
+
+                console.log("[signup] error:", error);
+                console.log("[signup] data:", data);
+                console.log("[signup] session:", data?.session ? "present" : "null");
+                console.log("[signup] user id:", data?.user?.id);
+                console.log("[signup] email_confirmed_at:", data?.user?.email_confirmed_at);
+                console.log("[signup] identities length:", data?.user?.identities?.length);
+                if (data?.user && data.user.identities?.length === 0) {
+                  console.log("[signup] WARNING: email already registered -> Supabase sent NO email (false success)");
+                }
+
+                setLoading(false);
               if (error) { setError(error.message); }
               else if (data.session) { router.push("/onboarding"); router.refresh(); }
               else { setInfo(el.auth.checkEmail); }

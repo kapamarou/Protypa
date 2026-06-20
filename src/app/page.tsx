@@ -34,9 +34,10 @@ function Hero() {
       </div>
 
       {/* Content — centered as the main event */}
-      <div className="relative z-20 w-full mx-auto max-w-3xl px-4 sm:px-6 py-20 md:py-28 text-center">
-        <h1 className="font-display text-[clamp(1.75rem,4vw,3.5rem)] leading-[0.9] text-paper">
-          Ολοκληρωμένη προετοιμασία για τα Πρότυπα
+      <div className="relative z-20 w-full mx-auto px-4 sm:px-6 py-20 md:py-28 text-center">
+        <h1 className="font-display text-paper leading-[0.95]">
+          <span className="block whitespace-nowrap text-[clamp(1rem,6vw,5rem)] uppercase">Ολοκληρωμένη προετοιμασία</span>
+          <span className="block whitespace-nowrap text-[clamp(1rem,5vw,4.25rem)] uppercase">για τα Πρότυπα</span>
         </h1>
         <p className="mt-4 font-display text-[clamp(1.25rem,2.5vw,2rem)] text-paper/80">
           Σταθερή πρόοδος

@@ -1,10 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { DOY_LIST } from "@/lib/doy-list";
-import type { School } from "@/lib/types";
+import { formatEuro } from "@/lib/format";
+import type { Package, School } from "@/lib/types";
 
 type AccountType = "school" | "parent";
+
+interface ActivePkg {
+  pkg: Package;
+  expires_at: string;
+}
 
 export default function ProfilePage() {
   const [school, setSchool] = useState<Partial<School>>({});
@@ -15,16 +22,58 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [isPreview, setIsPreview] = useState(false);
 
+  // Subscription state
+  const [activePkgs, setActivePkgs] = useState<ActivePkg[]>([]);
+  const [expansionPkgs, setExpansionPkgs] = useState<Package[]>([]);
+  const [expansionCount, setExpansionCount] = useState(1);
+  const [expansionLoading, setExpansionLoading] = useState(false);
+
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { setSchool(PREVIEW_SCHOOL); setIsPreview(true); setLoading(false); return; }
-      const [{ data }, { data: profile }] = await Promise.all([
+      if (!user) {
+        setSchool(PREVIEW_SCHOOL);
+        setIsPreview(true);
+        setLoading(false);
+        return;
+      }
+
+      const [
+        { data: schoolData },
+        { data: profile },
+        { data: purchases },
+        { data: expPkgs },
+      ] = await Promise.all([
         supabase.from("schools").select("*").eq("id", user.id).maybeSingle(),
         supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
+        supabase
+          .from("purchases")
+          .select("*, packages(*)")
+          .eq("user_id", user.id)
+          .gt("expires_at", new Date().toISOString())
+          .order("expires_at", { ascending: false }),
+        supabase
+          .from("packages")
+          .select("*")
+          .eq("package_type", "expansion")
+          .order("min_students"),
       ]);
-      if (data) setSchool(data as School);
+
+      if (schoolData) setSchool(schoolData as School);
       setAccountType((profile?.account_type as AccountType | undefined) ?? "school");
+
+      if (purchases) {
+        const mapped = purchases
+          .map((row: { packages: Package; expires_at: string }) => ({
+            pkg: row.packages,
+            expires_at: row.expires_at,
+          }))
+          .filter((r: ActivePkg) => r.pkg?.package_type !== "expansion");
+        setActivePkgs(mapped);
+      }
+
+      if (expPkgs) setExpansionPkgs(expPkgs as Package[]);
+
       setLoading(false);
     });
   }, []);
@@ -41,27 +90,42 @@ export default function ProfilePage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error: err } = await supabase.from("schools").upsert({
-      id: user.id,
-      ...school,
-    });
-
+    const { error: err } = await supabase.from("schools").upsert({ id: user.id, ...school });
     setSaving(false);
     if (err) { setError(err.message); return; }
 
-    // Mark onboarding complete if all required fields are present
     const required = ["legal_name", "trade_name", "afm", "doy", "city"] as const;
     const complete = required.every((k) => school[k]);
     if (complete) {
       await supabase.from("profiles").update({ onboarding_complete: true }).eq("id", user.id);
     }
-
     setSaved(true);
+  }
+
+  async function buyExpansion() {
+    const pkg = expansionPkgs.find((p) => p.min_students === expansionCount);
+    if (!pkg) return;
+    setExpansionLoading(true);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ package_id: pkg.id }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else alert(data.error ?? "Κάτι πήγε στραβά. Δοκιμάστε ξανά.");
+    } finally {
+      setExpansionLoading(false);
+    }
   }
 
   if (loading) return <div className="py-12 text-center text-ink/30 text-sm">Φόρτωση…</div>;
 
   const isParent = accountType === "parent";
+  const hasActivePackage = activePkgs.length > 0;
+  const expansionPkg = expansionPkgs.find((p) => p.min_students === expansionCount);
+  const expansionPurchasable = !!expansionPkg?.stripe_price_id && (expansionPkg?.price_cents ?? 0) > 0;
 
   return (
     <div className="space-y-8 max-w-2xl">
@@ -83,9 +147,124 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* ─── Subscription section ─── */}
+      {!isPreview && (
+        <div className="rounded-2xl border border-ink/10 bg-white overflow-hidden">
+          <div className="px-6 pt-5">
+            <div className="inline-flex items-center gap-2 text-[10px] font-black tracking-[0.2em] uppercase text-[#7c00d0]">
+              <span className="w-2 h-2 rounded-sm bg-[#7c00d0]" />
+              Συνδρομή
+            </div>
+          </div>
+          <div className="px-6 pb-6 pt-4 space-y-4">
+            {hasActivePackage ? (
+              <>
+                {activePkgs.map((ap) => (
+                  <div key={ap.pkg.id} className="flex items-start justify-between gap-4 rounded-xl bg-[#056ef5]/5 border border-[#056ef5]/15 px-4 py-3">
+                    <div>
+                      <div className="text-sm font-bold text-ink">{ap.pkg.name_el}</div>
+                      <div className="text-xs text-ink/50 mt-0.5">
+                        Λήγει {new Date(ap.expires_at).toLocaleDateString("el-GR", { day: "numeric", month: "long", year: "numeric" })}
+                      </div>
+                    </div>
+                    <span className="flex-shrink-0 inline-flex items-center px-2.5 py-1 rounded-full bg-green-100 text-green-800 text-[10px] font-black uppercase tracking-wider">
+                      Ενεργό
+                    </span>
+                  </div>
+                ))}
+                <Link
+                  href="/paketa"
+                  className="inline-flex items-center gap-1.5 text-sm font-bold text-[#056ef5] hover:text-[#0451b8] transition-colors"
+                >
+                  Αναβάθμιση πακέτου →
+                </Link>
+              </>
+            ) : (
+              <div className="flex items-center justify-between gap-4 rounded-xl bg-ink/4 px-4 py-3">
+                <p className="text-sm text-ink/60">Δεν έχετε ενεργό πακέτο.</p>
+                <Link
+                  href="/paketa"
+                  className="flex-shrink-0 inline-flex items-center gap-1 px-4 py-2 rounded-full bg-[#056ef5] text-white text-xs font-black uppercase tracking-wider hover:bg-[#0451b8] transition-colors"
+                >
+                  Αποκτήστε πακέτο →
+                </Link>
+              </div>
+            )}
+
+            {/* Expansion widget — school accounts only */}
+            {!isParent && hasActivePackage && (
+              <>
+                <div className="h-px bg-ink/8 my-2" />
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-[0.15em] text-ink/50 mb-3">
+                    Επέκταση μαθητών
+                  </div>
+                  <p className="text-sm text-ink/60 mb-4 leading-relaxed">
+                    Προσθέστε έως 5 επιπλέον μαθητές στο πακέτο σας (12€ ανά μαθητή / έτος).
+                  </p>
+
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="flex items-center gap-0 rounded-xl border-2 border-ink/15 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setExpansionCount((c) => Math.max(1, c - 1))}
+                        className="w-10 h-10 flex items-center justify-center text-ink hover:bg-ink/5 transition-colors font-bold text-lg cursor-pointer"
+                      >
+                        −
+                      </button>
+                      <span className="w-10 text-center font-display text-lg font-bold text-ink tabular-nums">
+                        {expansionCount}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setExpansionCount((c) => Math.min(5, c + 1))}
+                        className="w-10 h-10 flex items-center justify-center text-ink hover:bg-ink/5 transition-colors font-bold text-lg cursor-pointer"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div>
+                      <span className="text-xs text-ink/50">Τιμή:</span>{" "}
+                      <span className="font-display text-xl font-bold text-ink tabular-nums">
+                        {formatEuro(expansionCount * 1200)}
+                      </span>
+                      <span className="text-xs text-ink/50"> / έτος</span>
+                    </div>
+                  </div>
+
+                  {expansionPurchasable ? (
+                    <button
+                      type="button"
+                      disabled={expansionLoading}
+                      onClick={buyExpansion}
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#056ef5] text-white font-black text-sm uppercase tracking-wider hover:bg-[#0451b8] hover:-translate-y-0.5 transition-all disabled:opacity-50 cursor-pointer"
+                    >
+                      {expansionLoading ? "Φόρτωση…" : `Προσθήκη ${expansionCount} μαθητή${expansionCount !== 1 ? "ών" : ""}`}
+                    </button>
+                  ) : (
+                    <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-ink/15 text-ink/50 font-bold text-sm cursor-not-allowed">
+                      Διαθέσιμο σύντομα
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Upgrade option also shown when no package */}
+            {!isParent && !hasActivePackage && (
+              <>
+                <div className="h-px bg-ink/8 my-2" />
+                <p className="text-xs text-ink/40">
+                  Αγοράστε πρώτα ένα βασικό πακέτο για να μπορείτε να προσθέσετε επέκταση μαθητών.
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       <form onSubmit={save} className="space-y-8">
         {isParent ? (
-          // ─── Parent profile: just the basics ─────────────────────────────
           <Section title="Στοιχεία" color="#7c00d0">
             <Field label="Ονοματεπώνυμο" value={school.contact_person ?? ""} onChange={(v) => set("contact_person", v)} placeholder="π.χ. Μαρία Παπαδοπούλου" />
             <Field label="Email" value={school.contact_email ?? ""} onChange={(v) => set("contact_email", v)} type="email" placeholder="you@example.com" />
@@ -95,7 +274,6 @@ export default function ProfilePage() {
           </Section>
         ) : (
           <>
-            {/* School: full set */}
             <Section title="Στοιχεία Εταιρείας" color="#056ef5">
               <Field label="Επωνυμία" value={school.legal_name ?? ""} onChange={(v) => set("legal_name", v)} placeholder="π.χ. Βασιλειάδης & ΣΙΑ ΟΕ" />
               <div>
@@ -147,7 +325,6 @@ export default function ProfilePage() {
           </>
         )}
 
-        {/* Marketing email opt-in */}
         <Section title="Ενημερωτικά Emails">
           <button type="button"
             onClick={() => set("marketing_opt_in", !school.marketing_opt_in)}

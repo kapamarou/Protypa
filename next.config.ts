@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/account/exam-paper/[id]": ["./src/lib/pdf/fonts/**/*"],
   },
+  // xlsx has a `browser` field in its package.json that tells webpack to stub
+  // out fs/Buffer/stream/crypto — even in server bundles. In production this
+  // causes XLSX.read() to silently fail. Marking it external forces Next.js to
+  // require() it at runtime so it gets the full Node.js environment it needs.
+  serverExternalPackages: ["xlsx"],
 };
 
 export default nextConfig;

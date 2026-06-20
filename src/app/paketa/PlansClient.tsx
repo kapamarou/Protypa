@@ -1,18 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Package, PackageFeature } from "@/lib/types";
+import type { AccountType, Package, PackageFeature } from "@/lib/types";
 import { formatEuro } from "@/lib/format";
 import { BuyButton } from "./BuyButton";
 
 export function PlansClient({
   packages,
   signedIn,
+  accountType,
 }: {
   packages: Package[];
   signedIn: boolean;
+  accountType: AccountType | null;
 }) {
-  // Parent + school tier rows, ignoring legacy.
   const parentPkg = packages.find((p) => p.package_type === "parent");
   const schoolTiers = useMemo(
     () =>
@@ -24,6 +25,10 @@ export function PlansClient({
 
   const [selectedTierIdx, setSelectedTierIdx] = useState(0);
   const selectedTier = schoolTiers[selectedTierIdx];
+
+  // A signed-in parent cannot buy school packages, and vice versa.
+  const parentDisabled = signedIn && accountType === "school";
+  const schoolDisabled = signedIn && accountType === "parent";
 
   return (
     <section className="bg-white py-14 md:py-24">
@@ -41,7 +46,7 @@ export function PlansClient({
 
         <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 mt-12">
           {parentPkg && (
-            <ParentCard pkg={parentPkg} signedIn={signedIn} />
+            <ParentCard pkg={parentPkg} signedIn={signedIn} disabled={parentDisabled} />
           )}
 
           {schoolTiers.length > 0 && selectedTier && (
@@ -50,6 +55,7 @@ export function PlansClient({
               selectedIdx={selectedTierIdx}
               onSelect={setSelectedTierIdx}
               signedIn={signedIn}
+              disabled={schoolDisabled}
             />
           )}
 
@@ -71,13 +77,34 @@ export function PlansClient({
 }
 
 // ─── Parent card ─────────────────────────────────────────────────────────
-function ParentCard({ pkg, signedIn }: { pkg: Package; signedIn: boolean }) {
+function ParentCard({
+  pkg,
+  signedIn,
+  disabled,
+}: {
+  pkg: Package;
+  signedIn: boolean;
+  disabled: boolean;
+}) {
   const purchasable = !!pkg.stripe_price_id && pkg.price_cents > 0;
+
   return (
-    <article className="relative flex flex-col rounded-3xl bg-[#7c00d0] text-white p-7 md:p-9 overflow-hidden">
+    <article
+      className={`relative flex flex-col rounded-3xl bg-[#7c00d0] text-white p-7 md:p-9 overflow-hidden transition-opacity ${
+        disabled ? "opacity-50" : ""
+      }`}
+    >
       <div className="pointer-events-none absolute -bottom-12 -right-8 text-[10rem] leading-none select-none opacity-[0.07]">
         ♡
       </div>
+
+      {disabled && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-3xl bg-black/20">
+          <span className="bg-white/90 text-ink text-xs font-black uppercase tracking-wider px-4 py-2 rounded-full">
+            Μη διαθέσιμο για φροντιστήρια
+          </span>
+        </div>
+      )}
 
       <div className="relative flex flex-col flex-1">
         <span className="text-xs font-bold tracking-[0.2em] uppercase opacity-70">Γονέας</span>
@@ -86,19 +113,25 @@ function ParentCard({ pkg, signedIn }: { pkg: Package; signedIn: boolean }) {
           <p className="mt-2 text-sm opacity-80 leading-relaxed">{pkg.description_el}</p>
         )}
 
-        <PriceBlock priceCents={pkg.price_cents} purchasable={purchasable} />
+        <PriceBlock priceCents={pkg.price_cents} />
 
         <div className="mt-7 h-px bg-white/15" />
 
         <FeatureList features={pkg.features} accent="bg-[#c8ff00] text-ink" />
 
         <div className="mt-8">
-          <BuyButton
-            packageId={pkg.id}
-            signedIn={signedIn}
-            purchasable={purchasable}
-            buttonClass="bg-[#FDFFFC] !text-[#7c00d0] border-2 border-white hover:bg-white/95"
-          />
+          {disabled ? (
+            <div className="w-full text-center py-4 text-sm font-semibold opacity-60">
+              Μη διαθέσιμο για τον λογαριασμό σας
+            </div>
+          ) : (
+            <BuyButton
+              packageId={pkg.id}
+              signedIn={signedIn}
+              purchasable={purchasable}
+              buttonClass="bg-[#FDFFFC] !text-[#7c00d0] border-2 border-white hover:bg-white/95"
+            />
+          )}
         </div>
       </div>
     </article>
@@ -111,23 +144,39 @@ function SchoolCard({
   selectedIdx,
   onSelect,
   signedIn,
+  disabled,
 }: {
   tiers: Package[];
   selectedIdx: number;
   onSelect: (i: number) => void;
   signedIn: boolean;
+  disabled: boolean;
 }) {
   const tier = tiers[selectedIdx];
   const purchasable = !!tier.stripe_price_id && tier.price_cents > 0;
 
   return (
-    <article className="relative flex flex-col rounded-3xl bg-[#056ef5] text-white p-7 md:p-9 overflow-hidden">
+    <article
+      className={`relative flex flex-col rounded-3xl bg-[#056ef5] text-white p-7 md:p-9 overflow-hidden transition-opacity ${
+        disabled ? "opacity-50" : ""
+      }`}
+    >
       <div className="pointer-events-none absolute -bottom-12 -right-8 text-[10rem] leading-none select-none opacity-[0.07]">
         ★
       </div>
+
+      {/* Popular badge */}
       <span className="absolute top-7 right-7 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#c8ff00] text-ink text-[10px] font-black uppercase tracking-wider">
         Δημοφιλές
       </span>
+
+      {disabled && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-3xl bg-black/20">
+          <span className="bg-white/90 text-ink text-xs font-black uppercase tracking-wider px-4 py-2 rounded-full">
+            Μη διαθέσιμο για γονείς
+          </span>
+        </div>
+      )}
 
       <div className="relative flex flex-col flex-1">
         <span className="text-xs font-bold tracking-[0.2em] uppercase opacity-70">Φροντιστήριο</span>
@@ -143,37 +192,50 @@ function SchoolCard({
           <div className="text-[10px] font-bold tracking-[0.2em] uppercase opacity-70 mb-3">
             Αριθμός μαθητών
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {tiers.map((t, i) => (
               <button
                 key={t.id}
                 type="button"
                 onClick={() => onSelect(i)}
-                className={`px-3 py-2.5 rounded-lg text-xs font-bold tabular-nums transition-all cursor-pointer ${
+                className={`relative px-3 py-2.5 rounded-lg text-xs font-bold tabular-nums transition-all cursor-pointer ${
                   selectedIdx === i
                     ? "bg-white !text-[#056ef5] shadow-md"
                     : "bg-white/10 text-white/85 hover:bg-white/20"
                 }`}
               >
                 {t.min_students}–{t.max_students}
+                {/* Expansion available badge */}
+                <span className="absolute -top-1.5 -right-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full bg-[#c8ff00] text-ink text-[8px] font-black leading-none">
+                  +επέκταση
+                </span>
               </button>
             ))}
           </div>
+          <p className="mt-2 text-[10px] opacity-60">
+            Επέκταση διαθέσιμη: +1–5 μαθητές × 12€ έκαστος
+          </p>
         </div>
 
-        <PriceBlock priceCents={tier.price_cents} purchasable={purchasable} />
+        <PriceBlock priceCents={tier.price_cents} />
 
         <div className="mt-7 h-px bg-white/15" />
 
         <FeatureList features={tier.features} accent="bg-[#c8ff00] text-ink" />
 
         <div className="mt-8">
-          <BuyButton
-            packageId={tier.id}
-            signedIn={signedIn}
-            purchasable={purchasable}
-            buttonClass="bg-[#FDFFFC] !text-[#056ef5] border-2 border-[#c8ff00] hover:bg-[#c8ff00]/10"
-          />
+          {disabled ? (
+            <div className="w-full text-center py-4 text-sm font-semibold opacity-60">
+              Μη διαθέσιμο για τον λογαριασμό σας
+            </div>
+          ) : (
+            <BuyButton
+              packageId={tier.id}
+              signedIn={signedIn}
+              purchasable={purchasable}
+              buttonClass="bg-[#FDFFFC] !text-[#056ef5] border-2 border-[#c8ff00] hover:bg-[#c8ff00]/10"
+            />
+          )}
         </div>
       </div>
     </article>
@@ -181,14 +243,8 @@ function SchoolCard({
 }
 
 // ─── Shared bits ─────────────────────────────────────────────────────────
-function PriceBlock({
-  priceCents,
-  purchasable,
-}: {
-  priceCents: number;
-  purchasable: boolean;
-}) {
-  if (!purchasable) {
+function PriceBlock({ priceCents }: { priceCents: number }) {
+  if (priceCents === 0) {
     return (
       <div className="mt-7">
         <div className="font-display text-3xl opacity-70 leading-none">Σύντομα διαθέσιμο</div>

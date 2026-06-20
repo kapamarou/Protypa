@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { el } from "@/lib/i18n/el";
 
 export function BuyButton({
@@ -11,22 +12,19 @@ export function BuyButton({
 }: {
   packageId: string;
   signedIn: boolean;
-  /** False when the package row has no stripe_price_id yet — show a disabled "coming soon" button. */
   purchasable?: boolean;
-  /** Tailwind classes that set the bg + text + hover colour for the card theme. */
   buttonClass?: string;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
-  // Not yet purchasable — Stripe products / prices haven't been created.
   if (!purchasable) {
     return (
       <button
         type="button"
         disabled
         aria-disabled="true"
-        title="Διαθέσιμο σύντομα"
         className={`group w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-full font-semibold cursor-not-allowed opacity-60 ${buttonClass}`}
       >
         Διαθέσιμο σύντομα
@@ -36,13 +34,38 @@ export function BuyButton({
 
   if (!signedIn) {
     return (
-      <button
-        onClick={() => router.push(`/signin?next=/paketa`)}
-        className={`group w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-full font-semibold shadow-lg shadow-slate-900/10 hover:-translate-y-0.5 hover:shadow-xl transition-all cursor-pointer ${buttonClass}`}
-      >
-        {el.packages.mustSignIn}
-        <Arrow />
-      </button>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setShowAuthPrompt((v) => !v)}
+          className={`group w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-full font-semibold shadow-lg shadow-slate-900/10 hover:-translate-y-0.5 hover:shadow-xl transition-all cursor-pointer ${buttonClass}`}
+        >
+          Αποκτήστε πρόσβαση
+          <Arrow />
+        </button>
+
+        {showAuthPrompt && (
+          <div className="absolute bottom-full mb-3 left-0 right-0 z-50 bg-white rounded-2xl shadow-2xl border border-ink/10 p-4 text-ink">
+            <p className="text-sm font-semibold text-center mb-3">
+              Χρειάζεστε λογαριασμό για να συνεχίσετε
+            </p>
+            <div className="flex flex-col gap-2">
+              <Link
+                href="/signup"
+                className="w-full inline-flex items-center justify-center px-5 py-3 rounded-full bg-[#056ef5] text-white font-black text-sm uppercase tracking-wider hover:bg-[#0451b8] transition-colors"
+              >
+                Δημιουργία λογαριασμού
+              </Link>
+              <Link
+                href={`/signin?next=/paketa`}
+                className="w-full inline-flex items-center justify-center px-5 py-3 rounded-full border-2 border-ink/20 text-ink font-bold text-sm hover:border-ink/40 transition-colors"
+              >
+                Σύνδεση
+              </Link>
+            </div>
+          </div>
+        )}
+      </div>
     );
   }
 

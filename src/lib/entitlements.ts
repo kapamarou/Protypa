@@ -94,18 +94,23 @@ export async function getAccountType(userId: string): Promise<AccountType> {
   return ((data?.account_type as AccountType | undefined) ?? "school");
 }
 
-// Returns the highest active student limit across the user's current packages.
-// • Parents on the parent package → 2
-// • Schools on tier-1 → 10, tier-2 → 15, … tier-4 → 25
+// Returns the total active student limit: highest base package + sum of all expansion add-ons.
+// • Parents on the parent package → 1
+// • Schools: base tier limit (10/20/30) + sum of expansion max_students
 // • No active package → 0 (UI shows "purchase to add students")
 export async function getStudentLimit(userId: string): Promise<number> {
   const active = await getActivePackages(userId);
-  let max = 0;
+  let base = 0;
+  let expansionSum = 0;
   for (const a of active) {
-    const m = a.pkg.max_students;
-    if (typeof m === "number" && m > max) max = m;
+    const m = a.pkg.max_students ?? 0;
+    if (a.pkg.package_type === "expansion") {
+      expansionSum += m;
+    } else if (m > base) {
+      base = m;
+    }
   }
-  return max;
+  return base + expansionSum;
 }
 
 // Convenience: are they allowed to add another student right now?

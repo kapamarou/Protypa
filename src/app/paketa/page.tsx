@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { el } from "@/lib/i18n/el";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { Package } from "@/lib/types";
+import { getAccountType } from "@/lib/entitlements";
+import type { AccountType, Package } from "@/lib/types";
 import { PlansClient } from "./PlansClient";
 
-
-export const revalidate = 3600; // cache page for 1 hour — package prices rarely change
+export const dynamic = "force-dynamic";
 
 export default async function PackagesPage() {
   const supabase = await createSupabaseServerClient();
@@ -24,11 +24,14 @@ export default async function PackagesPage() {
   ]);
 
   const packages = (rawPackages as Package[]) ?? [];
+  const accountType: AccountType | null = user
+    ? await getAccountType(user.id)
+    : null;
 
   return (
     <div>
       <Hero />
-      <PlansClient packages={packages} signedIn={!!user} />
+      <PlansClient packages={packages} signedIn={!!user} accountType={accountType} />
       <Compare packages={packages} />
       <Guarantee />
       <Faqs />

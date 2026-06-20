@@ -21,7 +21,7 @@ export interface PackageFeature {
   included: boolean;
 }
 
-export type PackageType = "parent" | "school" | "legacy";
+export type PackageType = "parent" | "school" | "legacy" | "expansion";
 export type BillingInterval = "month" | "year" | "one_time";
 export type AccountType = "school" | "parent";
 
