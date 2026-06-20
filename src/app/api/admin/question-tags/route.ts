@@ -100,6 +100,15 @@ function locateColumns(header: string[]) {
 // Sheets are matched to simulations by extracting a number from the sheet
 // name (so "ΚΡΙΤΗΡΙΟ 1" maps to simulations.number === 1, etc.).
 export async function POST(req: Request) {
+  try {
+    return await handlePost(req);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `Σφάλμα διακομιστή: ${message}` }, { status: 500 });
+  }
+}
+
+async function handlePost(req: Request) {
   // 1. Auth gate — must be an admin profile.
   const supabase = await createSupabaseServerClient();
   if (!supabase) {
@@ -120,7 +129,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-  // 2. Read the uploaded file.
+  // 2. Check service role key before we need it.
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY not set in production environment." }, { status: 503 });
+  }
+
+  // 3. Read the uploaded file.
   let form: FormData;
   try {
     form = await req.formData();
@@ -139,11 +153,12 @@ export async function POST(req: Request) {
   let workbook: XLSX.WorkBook;
   try {
     workbook = XLSX.read(buffer, { type: "array" });
-  } catch {
-    return NextResponse.json({ error: "Το αρχείο δεν αναγνωρίστηκε ως έγκυρο Excel." }, { status: 400 });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `Το αρχείο δεν αναγνωρίστηκε ως έγκυρο Excel: ${msg}` }, { status: 400 });
   }
 
-  // 3. Build a number → simulation lookup so we can match sheets.
+  // 4. Build a number → simulation lookup so we can match sheets.
   const admin = createSupabaseServiceClient();
   const { data: sims, error: simsErr } = await admin
     .from("simulations")
