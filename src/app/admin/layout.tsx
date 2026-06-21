@@ -11,6 +11,7 @@ const NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/parents", label: "Γονείς" },
   { href: "/admin/simulations", label: "Διαγωνίσματα" },
   { href: "/admin/news", label: "Νέα" },
+  { href: "/admin/packages", label: "Πακέτα" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
