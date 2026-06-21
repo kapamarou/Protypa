@@ -74,8 +74,10 @@ export interface Purchase {
   user_id: string;
   package_id: string;
   stripe_session_id: string | null;
+  payment_intent: string | null;
   purchased_at: string;
   expires_at: string;
+  revoked_at: string | null;
 }
 
 export interface GradingSession {
