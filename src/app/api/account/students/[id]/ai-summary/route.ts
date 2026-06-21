@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { checkRateLimit, tooManyRequests } from "@/lib/ratelimit";
+import { getActivePackages } from "@/lib/entitlements";
 import { computeScore, gradeCountsForStats } from "@/lib/scoring";
 import type { SimulationQuestionTag, Simulation, StudentSimulationGrade, Student } from "@/lib/types";
 
@@ -25,6 +26,12 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+
+  // Active package required — AI summaries cost real money
+  const activePkgs = await getActivePackages(user.id);
+  if (activePkgs.length === 0) {
+    return NextResponse.json({ error: "Απαιτείται ενεργό πακέτο." }, { status: 403 });
+  }
 
   // 10 AI summaries per user per hour — each call costs real money
   const rl = await checkRateLimit(`ai-summary:${user.id}`, 10, 3600);

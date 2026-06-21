@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getAccountType } from "@/lib/entitlements";
+import { getAccountType, getActivePackages } from "@/lib/entitlements";
+import { PaywallPrompt } from "@/components/PaywallPrompt";
 import type { Simulation } from "@/lib/types";
 
 interface QuestionStat {
@@ -38,6 +39,10 @@ export default async function SchoolPage({
   // Parent accounts don't get school-wide stats — only schools (φροντιστήρια) do.
   const accountType = await getAccountType(user.id);
   if (accountType === "parent") redirect("/account");
+
+  // Active package required to view school-wide statistics.
+  const activePkgs = await getActivePackages(user.id);
+  if (activePkgs.length === 0) return <PaywallPrompt feature="τα στατιστικά φροντιστηρίου" />;
 
   const sp = await searchParams;
 

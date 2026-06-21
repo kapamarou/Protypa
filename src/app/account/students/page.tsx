@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { PaywallPrompt } from "@/components/PaywallPrompt";
 import type { Student } from "@/lib/types";
 
 const DIMOTIKO = ["Δημοτικό"];
@@ -18,6 +19,12 @@ function pickColor(seed: string): string {
 export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasPackage, setHasPackage] = useState(true);
+  const [studentLimit, setStudentLimit] = useState(0);
+  const [isParent, setIsParent] = useState(false);
+  const [expansionPkgId, setExpansionPkgId] = useState<string | null>(null);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [buyingExpansion, setBuyingExpansion] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -37,6 +44,28 @@ export default function StudentsPage() {
     const supabase = createSupabaseBrowserClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setIsPreview(true); setLoading(false); setStudents(PREVIEW_STUDENTS); return; }
+
+    const now = new Date().toISOString();
+    const [{ data: purchases }, { data: profile }, { data: expPkg }] = await Promise.all([
+      supabase.from("purchases").select("packages(max_students, package_type)").eq("user_id", user.id).gt("expires_at", now),
+      supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
+      supabase.from("packages").select("id").eq("slug", "expansion-5").maybeSingle(),
+    ]);
+    if (!purchases || purchases.length === 0) { setHasPackage(false); setLoading(false); return; }
+
+    let base = 0, expSum = 0;
+    for (const p of purchases) {
+      // Supabase types a to-one FK embed as an array; at runtime it's a single object (or null).
+      const pkg = (p as unknown as { packages: { max_students: number; package_type: string } | null }).packages;
+      if (!pkg) continue;
+      const m = pkg.max_students ?? 0;
+      if (pkg.package_type === "expansion") expSum += m;
+      else if (m > base) base = m;
+    }
+    setStudentLimit(base + expSum);
+    setIsParent(profile?.account_type === "parent");
+    setExpansionPkgId(expPkg?.id ?? null);
+
     const { data } = await supabase.from("students").select("*").eq("school_id", user.id).order("last_name");
     setStudents((data as Student[]) ?? []);
     setLoading(false);
@@ -67,9 +96,26 @@ export default function StudentsPage() {
     setForm((p) => ({ ...p, subjects: p.subjects.includes(sub) ? p.subjects.filter((x) => x !== sub) : [...p.subjects, sub] }));
   }
 
+  async function buyExpansion() {
+    if (!expansionPkgId) return;
+    setBuyingExpansion(true);
+    const res = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ package_id: expansionPkgId }),
+    });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+    else { alert(data.error ?? "Σφάλμα. Δοκιμάστε ξανά."); setBuyingExpansion(false); }
+  }
+
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!form.first_name.trim() || !form.last_name.trim()) { setError("Συμπληρώστε όνομα και επώνυμο."); return; }
+    if (!editId && !isPreview && studentLimit > 0 && students.length >= studentLimit) {
+      setShowLimitModal(true);
+      return;
+    }
     setSaving(true); setError(null);
     const supabase = createSupabaseBrowserClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -141,8 +187,56 @@ export default function StudentsPage() {
   }, {});
   const noClass = filtered.filter((s) => !s.class_year || !CLASS_YEARS.includes(s.class_year));
 
+  if (!loading && !hasPackage) return <PaywallPrompt feature="τη διαχείριση μαθητών" />;
+
   return (
     <div className="space-y-6">
+      {/* Student limit modal */}
+      {showLimitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+            <div className="text-[10px] font-black tracking-[0.2em] uppercase text-[#056ef5]">Όριο μαθητών</div>
+            <h2 className="font-display text-xl text-ink">
+              Φτάσατε το όριο των {studentLimit} {studentLimit === 1 ? "μαθητή" : "μαθητών"}
+            </h2>
+            <p className="text-sm text-ink/60">
+              {isParent
+                ? "Το πακέτο γονέα επιτρέπει έως 1 παιδί. Για περισσότερα παιδιά επικοινωνήστε μαζί μας."
+                : "Αναβαθμίστε το πακέτο σας ή προσθέστε επέκταση για να συνεχίσετε να καταχωρίζετε μαθητές."}
+            </p>
+            <div className="flex flex-col gap-2 pt-1">
+              {!isParent && (
+                <>
+                  <Link
+                    href="/paketa"
+                    className="flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-[#056ef5] text-white font-black text-xs uppercase tracking-wider hover:bg-[#0451b8] transition-colors"
+                  >
+                    Αναβάθμιση πακέτου →
+                  </Link>
+                  {expansionPkgId && (
+                    <button
+                      type="button"
+                      onClick={buyExpansion}
+                      disabled={buyingExpansion}
+                      className="flex items-center justify-center gap-2 px-5 py-3 rounded-full border-2 border-[#056ef5] text-[#056ef5] font-black text-xs uppercase tracking-wider hover:bg-[#056ef5]/5 transition-colors disabled:opacity-50 cursor-pointer"
+                    >
+                      {buyingExpansion ? "Φόρτωση…" : "+ Επέκταση 5 μαθητών"}
+                    </button>
+                  )}
+                </>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowLimitModal(false)}
+                className="text-xs text-ink/45 hover:text-ink transition-colors py-2 cursor-pointer"
+              >
+                Κλείσιμο
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isPreview && (
         <div className="px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
           <strong>Προεπισκόπηση:</strong> Οι αλλαγές αποθηκεύονται μόνο τοπικά. Συνδεθείτε για μόνιμη αποθήκευση.
@@ -156,12 +250,19 @@ export default function StudentsPage() {
           <h1 className="font-display text-2xl text-ink mt-1">Αναλυτικά στοιχεία μαθητών</h1>
           <p className="text-sm text-ink/55 mt-1">Δεδομένα ανά μαθητή — μπορείτε να τα εκτυπώσετε και να τα μοιραστείτε με τους γονείς.</p>
         </div>
-        <button
-          onClick={() => { resetForm(); setShowForm(true); }}
-          className="px-4 py-2 rounded-md bg-[#056ef5] text-white font-bold text-xs hover:bg-[#0451b8] transition-colors cursor-pointer"
-        >
-          + Νέος μαθητής
-        </button>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={() => { resetForm(); setShowForm(true); }}
+            className="px-4 py-2 rounded-md bg-[#056ef5] text-white font-bold text-xs hover:bg-[#0451b8] transition-colors cursor-pointer"
+          >
+            + Νέος μαθητής
+          </button>
+          {studentLimit > 0 && (
+            <span className="text-[10px] text-ink/40">
+              {students.length}/{studentLimit} μαθητές
+            </span>
+          )}
+        </div>
       </div>
 
       {/* KPI strip — dividers with brand color accents */}
