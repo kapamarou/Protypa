@@ -10,7 +10,7 @@ export default async function AdminSchoolsPage() {
     .select(`
       id, trade_name, legal_name, city, region, phone, afm, subjects,
       created_at, terms_accepted_at,
-      profiles!inner(full_name, onboarding_complete)
+      profiles(full_name, onboarding_complete)
     `)
     .order("created_at", { ascending: false });
 

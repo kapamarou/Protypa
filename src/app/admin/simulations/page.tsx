@@ -135,6 +135,12 @@ export default function AdminSimulationsPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link
+            href="/admin/yli"
+            className="!text-white px-4 py-2.5 rounded-full border border-white/20 hover:border-white/40 font-bold uppercase tracking-wider text-xs hover:bg-white/5 transition-all"
+          >
+            ↑ Ύλη
+          </Link>
+          <Link
             href="/admin/simulations/categorizations"
             className="!text-white px-4 py-2.5 rounded-full border border-white/20 hover:border-white/40 font-bold uppercase tracking-wider text-xs hover:bg-white/5 transition-all"
           >

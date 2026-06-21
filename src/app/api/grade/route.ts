@@ -5,6 +5,7 @@ import {
 } from "@/lib/supabase/server";
 import { hasAccessToPaper } from "@/lib/entitlements";
 import { scoreAnswers } from "@/lib/grading";
+import { checkRateLimit, tooManyRequests } from "@/lib/ratelimit";
 import type { Question } from "@/lib/types";
 
 export async function POST(req: Request) {
@@ -18,6 +19,10 @@ export async function POST(req: Request) {
   if (!user) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
+
+  // 60 grading sessions per user per 10 minutes
+  const rl = await checkRateLimit(`grade:${user.id}`, 60, 600);
+  if (!rl.allowed) return tooManyRequests();
 
   const { paper_id, student_name, answers } = await req.json();
   if (!paper_id || typeof answers !== "object" || answers === null) {

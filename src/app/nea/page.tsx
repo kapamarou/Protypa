@@ -104,6 +104,7 @@ function PostCard({ post }: { post: Post }) {
         <img
           src={post.cover_image_url}
           alt=""
+          aria-hidden="true"
           className="w-full aspect-[16/7] object-cover rounded-2xl mb-5"
         />
       )}

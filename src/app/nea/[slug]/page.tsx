@@ -53,6 +53,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           <img
             src={post.cover_image_url}
             alt=""
+            aria-hidden="true"
             className="w-full aspect-[16/9] object-cover rounded-2xl mt-8"
           />
         )}

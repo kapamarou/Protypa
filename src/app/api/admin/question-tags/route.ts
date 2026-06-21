@@ -103,8 +103,8 @@ export async function POST(req: Request) {
   try {
     return await handlePost(req);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: `Σφάλμα διακομιστή: ${message}` }, { status: 500 });
+    console.error("question-tags upload error:", err);
+    return NextResponse.json({ error: "Σφάλμα διακομιστή. Δοκιμάστε ξανά." }, { status: 500 });
   }
 }
 
@@ -153,9 +153,8 @@ async function handlePost(req: Request) {
   let workbook: XLSX.WorkBook;
   try {
     workbook = XLSX.read(buffer, { type: "array" });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: `Το αρχείο δεν αναγνωρίστηκε ως έγκυρο Excel: ${msg}` }, { status: 400 });
+  } catch {
+    return NextResponse.json({ error: "Το αρχείο δεν αναγνωρίστηκε ως έγκυρο Excel. Βεβαιωθείτε ότι είναι αρχείο .xlsx." }, { status: 400 });
   }
 
   // 4. Build a number → simulation lookup so we can match sheets.
@@ -164,7 +163,8 @@ async function handlePost(req: Request) {
     .from("simulations")
     .select("id, number, title");
   if (simsErr) {
-    return NextResponse.json({ error: simsErr.message }, { status: 500 });
+    console.error("Failed to load simulations:", simsErr.message);
+    return NextResponse.json({ error: "Σφάλμα διακομιστή. Δοκιμάστε ξανά." }, { status: 500 });
   }
   const simByNumber = new Map<number, { id: string; title: string }>();
   for (const s of sims ?? []) {
@@ -283,8 +283,9 @@ async function handlePost(req: Request) {
     .from("simulation_question_tags")
     .upsert(tagsToUpsert, { onConflict: "simulation_id,question_number" });
   if (upsertErr) {
+    console.error("Failed to upsert question tags:", upsertErr.message);
     return NextResponse.json(
-      { error: upsertErr.message, sheets: sheetReports },
+      { error: "Σφάλμα κατά την αποθήκευση. Δοκιμάστε ξανά.", sheets: sheetReports },
       { status: 500 },
     );
   }

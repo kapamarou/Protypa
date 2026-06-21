@@ -134,14 +134,16 @@ export default function Chatbot() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Γράψτε την ερώτησή σας..."
+              aria-label="Γράψτε την ερώτησή σας"
               className="flex-1 px-3 py-2 rounded-lg border border-ink/15 text-sm text-ink bg-white focus:outline-none focus:border-[#056ef5] transition-colors placeholder:text-ink/35"
             />
             <button
               type="submit"
+              aria-label="Αποστολή"
               disabled={!input.trim() || typing}
               className="px-4 rounded-lg bg-[#056ef5] text-white text-xs font-black uppercase tracking-wider hover:bg-[#0451b8] transition-colors disabled:opacity-40 cursor-pointer"
             >
-              →
+              <span aria-hidden="true">→</span>
             </button>
           </form>
         </div>

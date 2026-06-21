@@ -10,17 +10,16 @@ export async function POST(req: Request) {
   const stripe = getStripe();
   const sig = req.headers.get("stripe-signature");
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!sig || !secret) {
-    return NextResponse.json({ error: "missing signature" }, { status: 400 });
-  }
 
   const body = await req.text();
   let event: Stripe.Event;
   try {
+    if (!sig || !secret) throw new Error("missing");
     event = stripe.webhooks.constructEvent(body, sig, secret);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "invalid signature";
-    return NextResponse.json({ error: message }, { status: 400 });
+  } catch {
+    // Return a consistent response — don't reveal whether the secret is
+    // missing vs the signature is invalid (prevents enumeration).
+    return NextResponse.json({ error: "Invalid request" }, { status: 401 });
   }
 
   if (event.type === "checkout.session.completed") {

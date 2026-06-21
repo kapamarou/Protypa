@@ -80,20 +80,31 @@ function Compare({ packages }: { packages: Package[] }) {
     .sort((a, b) => (b.max_students ?? 0) - (a.max_students ?? 0))[0];
 
   // Union of all feature labels across the two columns, preserving order.
+  // Exclude stale/inaccurate labels that have been superseded by the new feature set.
+  const HIDDEN_LABELS = new Set(["Στατιστικά για κάθε παιδί"]);
   const seen = new Set<string>();
   const allFeatureLabels: string[] = [];
   for (const pkg of [parentPkg, schoolPkg]) {
     if (!pkg) continue;
     for (const f of pkg.features) {
-      if (!seen.has(f.label)) {
+      if (!seen.has(f.label) && !HIDDEN_LABELS.has(f.label)) {
         seen.add(f.label);
         allFeatureLabels.push(f.label);
       }
     }
   }
 
+  // These features belong to both packages per the new spec; force ✓ regardless of stale DB data.
+  const BOTH_INCLUDED = new Set([
+    "Διάγραμμα προσωπικής πορείας",
+    "AI σύνοψη επίδοσης μαθητή",
+    "Στατιστικά μαθητή",
+    "Πρόσβαση σε όλα τα παλιά θέματα",
+  ]);
+
   function included(pkg: Package | undefined, label: string): boolean {
     if (!pkg) return false;
+    if (BOTH_INCLUDED.has(label)) return true;
     return pkg.features.some((f) => f.label === label && f.included);
   }
 
@@ -125,9 +136,9 @@ function Compare({ packages }: { packages: Package[] }) {
             {el.packages.compareTitle}
           </h2>
           <p className="mt-4 text-muted text-base">
-            Τα δύο πακέτα έχουν την ίδια πρόσβαση στα διαγωνίσματα. Η μεγάλη διαφορά είναι ότι το πακέτο
-            φροντιστηρίου περιλαμβάνει συνολικά στατιστικά για όλους τους μαθητές σας και σύγκριση με τον
-            πανελλαδικό μέσο όρο. Οι γονείς βλέπουν τα στατιστικά του παιδιού τους.
+            Το πακέτο γονέα παρέχει πρόσβαση σε 3+2 διαγωνίσματα για 1 μαθητή.
+            Το πακέτο φροντιστηρίου παρέχει πρόσβαση σε 10 διαγωνίσματα με συνολικά
+            στατιστικά, σύγκριση με άλλα φροντιστήρια Ελλάδας, και κλιμακούμενο αριθμό μαθητών.
           </p>
         </div>
 
@@ -158,23 +169,12 @@ function Compare({ packages }: { packages: Package[] }) {
                   </td>
                 </tr>
               ))}
-              <tr className="border-t border-white/10">
-                <td className="px-3 py-4 md:px-6 md:py-5 text-paper font-display text-sm md:text-lg">
-                  Αριθμός μαθητών
-                </td>
-                <td className="text-center px-3 py-4 md:px-6 md:py-5 font-display text-base md:text-lg text-accent tabular-nums">
-                  1–2
-                </td>
-                <td className="text-center px-3 py-4 md:px-6 md:py-5 font-display text-base md:text-lg text-accent tabular-nums">
-                  5–25
-                </td>
-              </tr>
             </tbody>
           </table>
         </div>
 
         <p className="mt-4 text-xs text-paper/60 text-center">
-          Το πακέτο φροντιστηρίου έχει 4 επίπεδα (5–10, 11–15, 16–20, 21–25 μαθητές) με κλιμακούμενη τιμή.
+          Το πακέτο φροντιστηρίου έχει 3 επίπεδα (1–10 / 11–20 / 21–30 μαθητές). Κάθε επέκταση +5 μαθητών κοστίζει 30€ + ΦΠΑ.
         </p>
       </div>
     </section>

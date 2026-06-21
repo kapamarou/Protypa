@@ -8,9 +8,9 @@ import { AdminMobileNav } from "./AdminMobileNav";
 const NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin", label: "Πίνακας" },
   { href: "/admin/schools", label: "Φροντιστήρια" },
+  { href: "/admin/parents", label: "Γονείς" },
   { href: "/admin/simulations", label: "Διαγωνίσματα" },
   { href: "/admin/news", label: "Νέα" },
-  { href: "/admin/chatbot", label: "Chatbot" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

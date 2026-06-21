@@ -68,7 +68,7 @@ export function PlansClient({
         </div>
 
         <p className="mt-8 text-xs text-ink/50 text-center max-w-xl mx-auto leading-relaxed">
-          Ετήσια συνδρομή. Μπορείτε ανά πάσα στιγμή να αναβαθμίσετε ή να υποβιβάσετε το πακέτο σας
+          Ετήσιο πακέτο. Μπορείτε ανά πάσα στιγμή να αναβαθμίσετε ή να υποβιβάσετε το πακέτο σας
           ανάλογα με τις ανάγκες σας.
         </p>
       </div>
@@ -212,8 +212,8 @@ function SchoolCard({
               </button>
             ))}
           </div>
-          <p className="mt-2 text-[10px] opacity-60">
-            Επέκταση διαθέσιμη: +1–5 μαθητές × 12€ έκαστος
+          <p className="mt-2 text-xs opacity-60">
+            Επέκταση: +5 μαθητές × 30€ + ΦΠΑ ανά πακέτο
           </p>
         </div>
 
@@ -260,10 +260,10 @@ function PriceBlock({ priceCents }: { priceCents: number }) {
         <span className="font-display text-5xl md:text-6xl tabular-nums leading-none">
           {formatEuro(priceCents)}
         </span>
-        <span className="text-xs opacity-70 pb-2">/ έτος</span>
+        <span className="text-xs opacity-70 pb-2">+ ΦΠΑ / έτος</span>
       </div>
       <div className="mt-2 text-[11px] opacity-60 font-bold uppercase tracking-wider">
-        Ετήσια χρέωση · αλλάζετε πακέτο όποτε θέλετε
+        Ετήσιο πακέτο · αλλάζετε πακέτο όποτε θέλετε
       </div>
     </div>
   );

@@ -49,6 +49,7 @@ export function FaqClient() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={el.faq.searchPlaceholder}
+              aria-label="Αναζήτηση ερωτήσεων"
               className="w-full bg-transparent text-lg md:text-xl font-display text-ink placeholder:text-ink/40 placeholder:font-display focus:outline-none"
             />
             {query && (

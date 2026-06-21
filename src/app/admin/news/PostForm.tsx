@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -22,7 +22,9 @@ export default function PostForm({ initial, postId }: Props) {
   const [body, setBody] = useState(initial?.body ?? "");
   const [tag, setTag] = useState(initial?.tag ?? TAGS[0]);
   const [coverImageUrl, setCoverImageUrl] = useState(initial?.cover_image_url ?? "");
-  const [publishAt, setPublishAt] = useState(initial?.publish_at ? initial.publish_at.slice(0, 16) : "");
+  const [publishDate, setPublishDate] = useState(initial?.publish_at ? initial.publish_at.slice(0, 10) : "");
+  const [publishTime, setPublishTime] = useState(initial?.publish_at ? initial.publish_at.slice(11, 16) : "09:00");
+  const publishAt = publishDate ? `${publishDate}T${publishTime || "09:00"}` : "";
   const [slugTouched, setSlugTouched] = useState(Boolean(initial?.slug));
 
   const [saving, setSaving] = useState(false);
@@ -170,7 +172,36 @@ export default function PostForm({ initial, postId }: Props) {
         <AdminField label="Κείμενο άρθρου *" value={body} onChange={setBody} placeholder="Το πλήρες κείμενο. Χρησιμοποιήστε διπλό enter για παραγράφους." multiline rows={10} />
 
         {/* Publish at */}
-        <AdminField label="Ημ/νία δημοσίευσης" type="datetime-local" value={publishAt} onChange={setPublishAt} help="Αφήστε κενό για πρόχειρο. Επιλέξτε μελλοντική στιγμή για προγραμματισμό." />
+        <div>
+          <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white">Ημ/νία δημοσίευσης</span>
+          <div className="mt-2 flex items-center gap-3">
+            <DatePickerEU value={publishDate} onChange={setPublishDate} />
+            <input
+              type="text"
+              value={publishTime}
+              onChange={(e) => {
+                const v = e.target.value.replace(/[^0-9:]/g, "").slice(0, 5);
+                setPublishTime(v);
+              }}
+              disabled={!publishDate}
+              placeholder="ΩΩ:ΛΛ"
+              maxLength={5}
+              className="w-24 bg-transparent border-0 border-b-2 border-white/20 px-0 py-2.5 text-base text-white placeholder:text-white/25 focus:outline-none focus:border-[#056ef5] transition-colors disabled:opacity-30"
+            />
+            {publishDate && (
+              <button
+                type="button"
+                onClick={() => { setPublishDate(""); setPublishTime("09:00"); }}
+                className="text-white/30 hover:text-white/70 transition-colors text-xs font-bold"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          <span className="block mt-1 text-[10px] text-white/35">
+            {publishDate ? "" : "Αφήστε κενό για πρόχειρο. Επιλέξτε μελλοντική ημ/νία για προγραμματισμό."}
+          </span>
+        </div>
 
         {error && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 px-3 py-2 rounded-lg">{error}</p>}
 
@@ -197,6 +228,46 @@ export default function PostForm({ initial, postId }: Props) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function DatePickerEU({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const display = value
+    ? `${value.slice(8, 10)}/${value.slice(5, 7)}/${value.slice(0, 4)}`
+    : "";
+
+  function open() {
+    try { ref.current?.showPicker(); } catch { ref.current?.click(); }
+  }
+
+  return (
+    <div className="relative flex items-center gap-3 flex-1">
+      <input
+        type="text"
+        value={display}
+        readOnly
+        placeholder="ΗΗ/ΜΜ/ΕΕΕΕ"
+        onClick={open}
+        className="flex-1 bg-transparent border-0 border-b-2 border-white/20 px-0 py-2.5 text-base text-white placeholder:text-white/25 focus:outline-none focus:border-[#056ef5] transition-colors cursor-pointer"
+      />
+      <button type="button" onClick={open} tabIndex={-1} className="text-white/40 hover:text-white transition-colors cursor-pointer">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="18" rx="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      </button>
+      <input
+        ref={ref}
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute left-0 bottom-0 w-0 h-0 opacity-0 pointer-events-none [color-scheme:dark]"
+        tabIndex={-1}
+      />
     </div>
   );
 }

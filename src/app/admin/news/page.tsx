@@ -80,8 +80,11 @@ export default async function AdminNewsPage() {
                       <StateBadge state={state} />
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Link href={`/admin/news/${p.id}/edit`} className="text-xs font-bold text-[#c8ff00] hover:text-white transition-colors">
-                        Επεξ. →
+                      <Link
+                        href={`/admin/news/${p.id}/edit`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#056ef5] hover:bg-[#0451b8] text-white text-[10px] font-black uppercase tracking-wider transition-colors"
+                      >
+                        Επεξεργασία →
                       </Link>
                     </td>
                   </tr>

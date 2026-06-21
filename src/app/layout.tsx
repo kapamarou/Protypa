@@ -30,8 +30,14 @@ export default function RootLayout({
       className={`${notoSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[#056ef5] focus:text-white focus:text-sm focus:font-bold focus:shadow-lg"
+        >
+          Μετάβαση στο κύριο περιεχόμενο
+        </a>
         <Chrome><Header /></Chrome>
-        <main className="flex-1">{children}</main>
+        <main id="main-content" className="flex-1">{children}</main>
         <Chrome><Footer /></Chrome>
         <Chatbot />
       </body>

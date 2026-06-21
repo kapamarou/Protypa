@@ -726,12 +726,18 @@ function CellBtn({ isWrong, onToggle, hue }: { isWrong: boolean; onToggle: () =>
 
 function Checkbox({ checked, indeterminate = false, onChange }: { checked: boolean; indeterminate?: boolean; onChange: () => void }) {
   return (
-    <div onClick={onChange}
-      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all ${
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={indeterminate ? "mixed" : checked}
+      onClick={onChange}
+      onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); onChange(); } }}
+      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[#056ef5] focus:ring-offset-1 ${
         checked || indeterminate ? "bg-[#056ef5] border-[#056ef5]" : "border-ink/25 hover:border-[#056ef5]"
-      }`}>
-      {checked && <span className="text-white text-xs font-black leading-none">✓</span>}
-      {!checked && indeterminate && <span className="text-white text-xs font-black leading-none">–</span>}
-    </div>
+      }`}
+    >
+      {checked && <span aria-hidden="true" className="text-white text-xs font-black leading-none">✓</span>}
+      {!checked && indeterminate && <span aria-hidden="true" className="text-white text-xs font-black leading-none">–</span>}
+    </button>
   );
 }

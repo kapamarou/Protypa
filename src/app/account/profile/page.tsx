@@ -21,11 +21,14 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPreview, setIsPreview] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Subscription state
   const [activePkgs, setActivePkgs] = useState<ActivePkg[]>([]);
-  const [expansionPkgs, setExpansionPkgs] = useState<Package[]>([]);
-  const [expansionCount, setExpansionCount] = useState(1);
+  const [expansionPkg, setExpansionPkg] = useState<Package | null>(null);
   const [expansionLoading, setExpansionLoading] = useState(false);
 
   useEffect(() => {
@@ -55,8 +58,8 @@ export default function ProfilePage() {
         supabase
           .from("packages")
           .select("*")
-          .eq("package_type", "expansion")
-          .order("min_students"),
+          .eq("slug", "expansion-5")
+          .maybeSingle(),
       ]);
 
       if (schoolData) setSchool(schoolData as School);
@@ -72,7 +75,7 @@ export default function ProfilePage() {
         setActivePkgs(mapped);
       }
 
-      if (expPkgs) setExpansionPkgs(expPkgs as Package[]);
+      if (expPkgs) setExpansionPkg(expPkgs as Package);
 
       setLoading(false);
     });
@@ -102,15 +105,49 @@ export default function ProfilePage() {
     setSaved(true);
   }
 
+  async function downloadData() {
+    setExportLoading(true);
+    try {
+      const res = await fetch("/api/account/export");
+      if (!res.ok) { alert("Αποτυχία εξαγωγής. Δοκιμάστε ξανά."); return; }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "protypa-data-export.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExportLoading(false);
+    }
+  }
+
+  async function deleteAccount() {
+    setDeleteLoading(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch("/api/account/delete", { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        setDeleteError(data.error ?? "Αποτυχία. Δοκιμάστε ξανά.");
+        return;
+      }
+      const supabase = createSupabaseBrowserClient();
+      await supabase.auth.signOut();
+      window.location.href = "/";
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
   async function buyExpansion() {
-    const pkg = expansionPkgs.find((p) => p.min_students === expansionCount);
-    if (!pkg) return;
+    if (!expansionPkg) return;
     setExpansionLoading(true);
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ package_id: pkg.id }),
+        body: JSON.stringify({ package_id: expansionPkg.id }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
@@ -124,7 +161,6 @@ export default function ProfilePage() {
 
   const isParent = accountType === "parent";
   const hasActivePackage = activePkgs.length > 0;
-  const expansionPkg = expansionPkgs.find((p) => p.min_students === expansionCount);
   const expansionPurchasable = !!expansionPkg?.stripe_price_id && (expansionPkg?.price_cents ?? 0) > 0;
 
   return (
@@ -199,37 +235,14 @@ export default function ProfilePage() {
                   <div className="text-xs font-bold uppercase tracking-[0.15em] text-ink/50 mb-3">
                     Επέκταση μαθητών
                   </div>
-                  <p className="text-sm text-ink/60 mb-4 leading-relaxed">
-                    Προσθέστε έως 5 επιπλέον μαθητές στο πακέτο σας (12€ ανά μαθητή / έτος).
-                  </p>
-
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center gap-0 rounded-xl border-2 border-ink/15 overflow-hidden">
-                      <button
-                        type="button"
-                        onClick={() => setExpansionCount((c) => Math.max(1, c - 1))}
-                        className="w-10 h-10 flex items-center justify-center text-ink hover:bg-ink/5 transition-colors font-bold text-lg cursor-pointer"
-                      >
-                        −
-                      </button>
-                      <span className="w-10 text-center font-display text-lg font-bold text-ink tabular-nums">
-                        {expansionCount}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setExpansionCount((c) => Math.min(5, c + 1))}
-                        className="w-10 h-10 flex items-center justify-center text-ink hover:bg-ink/5 transition-colors font-bold text-lg cursor-pointer"
-                      >
-                        +
-                      </button>
-                    </div>
+                  <div className="flex items-center justify-between gap-4 rounded-xl bg-ink/4 border border-ink/10 px-4 py-3 mb-4">
                     <div>
-                      <span className="text-xs text-ink/50">Τιμή:</span>{" "}
-                      <span className="font-display text-xl font-bold text-ink tabular-nums">
-                        {formatEuro(expansionCount * 1200)}
-                      </span>
-                      <span className="text-xs text-ink/50"> / έτος</span>
+                      <div className="font-bold text-sm text-ink">+5 μαθητές</div>
+                      <div className="text-xs text-ink/50 mt-0.5">30€ + ΦΠΑ / πακέτο επέκτασης</div>
                     </div>
+                    <span className="font-display text-xl font-bold text-ink tabular-nums flex-shrink-0">
+                      {formatEuro(3000)}<span className="text-xs font-sans text-ink/50"> + ΦΠΑ</span>
+                    </span>
                   </div>
 
                   {expansionPurchasable ? (
@@ -239,7 +252,7 @@ export default function ProfilePage() {
                       onClick={buyExpansion}
                       className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#056ef5] text-white font-black text-sm uppercase tracking-wider hover:bg-[#0451b8] hover:-translate-y-0.5 transition-all disabled:opacity-50 cursor-pointer"
                     >
-                      {expansionLoading ? "Φόρτωση…" : `Προσθήκη ${expansionCount} μαθητή${expansionCount !== 1 ? "ών" : ""}`}
+                      {expansionLoading ? "Φόρτωση…" : "Προσθήκη +5 μαθητών"}
                     </button>
                   ) : (
                     <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-ink/15 text-ink/50 font-bold text-sm cursor-not-allowed">
@@ -354,6 +367,86 @@ export default function ProfilePage() {
           {saving ? "Αποθήκευση…" : "Αποθήκευση αλλαγών"}
         </button>
       </form>
+
+      {/* ─── Data export ─── */}
+      {!isPreview && (
+        <div className="rounded-2xl border border-ink/10 bg-white overflow-hidden">
+          <div className="px-6 pt-5">
+            <div className="inline-flex items-center gap-2 text-[10px] font-black tracking-[0.2em] uppercase text-[#056ef5]">
+              <span className="w-2 h-2 rounded-sm bg-[#056ef5]" />
+              Τα Δεδομένα Μου
+            </div>
+          </div>
+          <div className="px-6 pb-6 pt-4">
+            <p className="text-sm text-ink/60 mb-4">
+              Κατεβάστε αντίγραφο όλων των δεδομένων που τηρούμε για τον λογαριασμό σας (GDPR — δικαίωμα φορητότητας).
+            </p>
+            <button
+              type="button"
+              disabled={exportLoading}
+              onClick={downloadData}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-ink/20 text-ink font-bold text-sm hover:border-ink/40 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {exportLoading ? "Προετοιμασία…" : "Λήψη δεδομένων (.json)"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Danger zone ─── */}
+      {!isPreview && (
+        <div className="rounded-2xl border border-red-200 bg-white overflow-hidden">
+          <div className="px-6 pt-5">
+            <div className="inline-flex items-center gap-2 text-[10px] font-black tracking-[0.2em] uppercase text-red-600">
+              <span className="w-2 h-2 rounded-sm bg-red-500" />
+              Διαγραφή Λογαριασμού
+            </div>
+          </div>
+          <div className="px-6 pb-6 pt-4">
+            {!showDeleteConfirm ? (
+              <>
+                <p className="text-sm text-ink/60 mb-4">
+                  Η διαγραφή είναι μόνιμη και δεν μπορεί να αναιρεθεί. Όλα τα δεδομένα σας θα διαγραφούν οριστικά.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-red-300 text-red-600 font-bold text-sm hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  Διαγραφή λογαριασμού
+                </button>
+              </>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-800">
+                  <strong className="font-bold">Είστε σίγουροι;</strong> Θα χαθούν οριστικά όλα τα δεδομένα, οι μαθητές, τα αποτελέσματα και οι συνδρομές σας.
+                </div>
+                {deleteError && (
+                  <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-xl">{deleteError}</p>
+                )}
+                <div className="flex gap-3 flex-wrap">
+                  <button
+                    type="button"
+                    disabled={deleteLoading}
+                    onClick={deleteAccount}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {deleteLoading ? "Διαγραφή…" : "Ναι, διαγραφή λογαριασμού"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowDeleteConfirm(false); setDeleteError(null); }}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-ink/20 text-ink font-bold text-sm hover:border-ink/40 transition-colors cursor-pointer"
+                  >
+                    Ακύρωση
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

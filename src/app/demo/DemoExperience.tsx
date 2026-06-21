@@ -309,7 +309,7 @@ function ResultsPhase({ wrongIndices, score, onRestart }: { wrongIndices: number
           {STUDENT.initials}
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="font-display text-2xl text-ink">{STUDENT.name}</h1>
+          <h2 className="font-display text-2xl text-ink">{STUDENT.name}</h2>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-ink/55">
             <span>{STUDENT.classYear}</span>
             <span>Γλώσσα · Μαθηματικά</span>
@@ -410,7 +410,7 @@ function ResultsPhase({ wrongIndices, score, onRestart }: { wrongIndices: number
 
       {/* CTA banner */}
       <div className="rounded-2xl bg-[#7c00d0] text-white p-6 md:p-8 text-center">
-        <h3 className="font-display text-2xl md:text-3xl">Έτσι θα φαίνονται οι μαθητές σας</h3>
+        <h2 className="font-display text-2xl md:text-3xl">Έτσι θα φαίνονται οι μαθητές σας</h2>
         <p className="mt-2 text-sm text-white/85 max-w-xl mx-auto">
           Με το Protupa, αυτή η ανάλυση δημιουργείται αυτόματα για κάθε μαθητή σας μετά από κάθε διαγώνισμα.
         </p>

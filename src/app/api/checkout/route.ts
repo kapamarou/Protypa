@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
+import { checkRateLimit, tooManyRequests } from "@/lib/ratelimit";
 
 export async function POST(req: Request) {
   const supabase = await createSupabaseServerClient();
@@ -13,6 +14,10 @@ export async function POST(req: Request) {
   if (!user) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
+
+  // 5 checkout attempts per user per hour — prevents Stripe session flooding
+  const rl = await checkRateLimit(`checkout:${user.id}`, 5, 3600);
+  if (!rl.allowed) return tooManyRequests();
 
   const { package_id } = await req.json();
   if (!package_id) {
@@ -38,15 +43,17 @@ export async function POST(req: Request) {
     );
   }
 
-  const origin = req.headers.get("origin") ?? "http://localhost:3000";
+  // Use a server-controlled base URL — never trust the Origin header from the
+  // client, which can be spoofed to redirect users to an attacker-controlled site.
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://protypa.gr").replace(/\/$/, "");
   const stripe = getStripe();
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     locale: "el",
     customer_email: user.email,
     line_items: [{ price: pkg.stripe_price_id, quantity: 1 }],
-    success_url: `${origin}/account?purchase=success`,
-    cancel_url: `${origin}/paketa`,
+    success_url: `${siteUrl}/account?purchase=success`,
+    cancel_url: `${siteUrl}/paketa`,
     metadata: {
       user_id: user.id,
       package_id: pkg.id,

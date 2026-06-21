@@ -12,10 +12,11 @@ export default async function GradingListPage() {
 
   const now = new Date().toISOString();
 
-  const [{ data: simulations }, { data: myParticipations }, active] = await Promise.all([
+  const [{ data: simulations }, { data: myParticipations }, active, { data: yliSettings }] = await Promise.all([
     supabase.from("simulations").select("*").eq("is_published", true).order("number"),
     supabase.from("school_simulations").select("*").eq("school_id", user.id),
     getActivePackages(user.id),
+    supabase.from("app_settings").select("key, value").in("key", ["yli_greek_visible", "yli_math_visible"]),
   ]);
 
   const sims = (simulations as Simulation[]) ?? [];
@@ -43,15 +44,30 @@ export default async function GradingListPage() {
     return false;
   }
 
-  return <GradingView sims={sims} participationMap={participationMap} now={now} hasAccess={hasAccess} />;
+  const yliMap = Object.fromEntries((yliSettings ?? []).map((r) => [r.key, r.value === "true"]));
+  const yliGreekVisible = yliMap["yli_greek_visible"] ?? false;
+  const yliMathVisible  = yliMap["yli_math_visible"]  ?? false;
+
+  return (
+    <GradingView
+      sims={sims}
+      participationMap={participationMap}
+      now={now}
+      hasAccess={hasAccess}
+      yliGreekVisible={yliGreekVisible}
+      yliMathVisible={yliMathVisible}
+    />
+  );
 }
 
 // ─── View ────────────────────────────────────────────────────────────────────
 
-function GradingView({ sims, participationMap, now, isPreview = false, hasAccess = () => true }: {
+function GradingView({ sims, participationMap, now, isPreview = false, hasAccess = () => true, yliGreekVisible = false, yliMathVisible = false }: {
   sims: Simulation[]; participationMap: Map<string, SchoolSimulation>;
   now: string; isPreview?: boolean;
   hasAccess?: (simSubject: string) => boolean;
+  yliGreekVisible?: boolean;
+  yliMathVisible?: boolean;
 }) {
   const available = sims.filter((s) => s.unlocks_at && s.unlocks_at <= now);
   const submitted = sims.filter((s) => participationMap.get(s.id)?.is_submitted);
@@ -71,54 +87,58 @@ function GradingView({ sims, participationMap, now, isPreview = false, hasAccess
         <p className="text-sm text-ink/55 mt-1">Ύλη, θέματα και καταχώρηση απαντήσεων ανά διαγώνισμα.</p>
       </div>
 
-      {/* Ύλη download buttons — Greek + Math annual schedule PDFs */}
-      <div className="grid sm:grid-cols-2 gap-3">
-        <a
-          href="/yli/yli-glossa-2026-2027.pdf"
-          download="Ύλη Γλώσσας 2026-2027.pdf"
-          className="group flex items-center gap-4 px-5 py-4 rounded-2xl bg-[#7c00d0] hover:bg-[#6500b0] transition-colors !text-white"
-        >
-          <span className="w-10 h-10 rounded-xl bg-white/15 grid place-items-center flex-shrink-0 group-hover:bg-white/20 transition-colors">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="text-[10px] font-bold tracking-[0.18em] uppercase opacity-80">
-              Ετήσιος προτεινόμενος προγραμματισμός
-            </div>
-            <div className="font-display text-lg leading-tight mt-0.5">Γλώσσα</div>
-          </div>
-          <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-white/15 px-2.5 py-1 rounded-full group-hover:bg-white/20 transition-colors">
-            PDF ↓
-          </span>
-        </a>
+      {/* Ύλη download buttons — only shown when admin has enabled visibility */}
+      {(yliGreekVisible || yliMathVisible) && (
+        <div className="grid sm:grid-cols-2 gap-3">
+          {yliGreekVisible && (
+            <a
+              href="/api/yli/greek"
+              className="group flex items-center gap-4 px-5 py-4 rounded-2xl bg-[#7c00d0] hover:bg-[#6500b0] transition-colors !text-white"
+            >
+              <span className="w-10 h-10 rounded-xl bg-white/15 grid place-items-center flex-shrink-0 group-hover:bg-white/20 transition-colors">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] font-bold tracking-[0.18em] uppercase opacity-80">
+                  Ετήσιος προτεινόμενος προγραμματισμός
+                </div>
+                <div className="font-display text-lg leading-tight mt-0.5">Γλώσσα</div>
+              </div>
+              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-white/15 px-2.5 py-1 rounded-full group-hover:bg-white/20 transition-colors">
+                PDF ↓
+              </span>
+            </a>
+          )}
 
-        <a
-          href="/yli/yli-mathimatika-2026-2027.pdf"
-          download="Ύλη Μαθηματικών 2026-2027.pdf"
-          className="group flex items-center gap-4 px-5 py-4 rounded-2xl bg-[#056ef5] hover:bg-[#0451b8] transition-colors !text-white"
-        >
-          <span className="w-10 h-10 rounded-xl bg-white/15 grid place-items-center flex-shrink-0 group-hover:bg-white/20 transition-colors">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="text-[10px] font-bold tracking-[0.18em] uppercase opacity-80">
-              Ετήσιος προτεινόμενος προγραμματισμός
-            </div>
-            <div className="font-display text-lg leading-tight mt-0.5">Μαθηματικά</div>
-          </div>
-          <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-white/15 px-2.5 py-1 rounded-full group-hover:bg-white/20 transition-colors">
-            PDF ↓
-          </span>
-        </a>
-      </div>
+          {yliMathVisible && (
+            <a
+              href="/api/yli/math"
+              className="group flex items-center gap-4 px-5 py-4 rounded-2xl bg-[#056ef5] hover:bg-[#0451b8] transition-colors !text-white"
+            >
+              <span className="w-10 h-10 rounded-xl bg-white/15 grid place-items-center flex-shrink-0 group-hover:bg-white/20 transition-colors">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] font-bold tracking-[0.18em] uppercase opacity-80">
+                  Ετήσιος προτεινόμενος προγραμματισμός
+                </div>
+                <div className="font-display text-lg leading-tight mt-0.5">Μαθηματικά</div>
+              </div>
+              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-white/15 px-2.5 py-1 rounded-full group-hover:bg-white/20 transition-colors">
+                PDF ↓
+              </span>
+            </a>
+          )}
+        </div>
+      )}
 
       {/* KPI strip — dividers with brand color accents */}
       {sims.length > 0 && (
