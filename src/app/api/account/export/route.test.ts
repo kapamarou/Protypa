@@ -74,4 +74,22 @@ describe('GET /api/account/export', () => {
     expect(data).toHaveProperty('purchases')
     expect(data).toHaveProperty('students')
   })
+
+  // Regression guard for WP-D1: students are owned via school_id. Querying the
+  // non-existent user_id column silently returned no students for every user.
+  it('queries students by school_id, not user_id', async () => {
+    const client = makeClient(MOCK_USER)
+    jest.mocked(createSupabaseServerClient).mockResolvedValue(client as never)
+    await GET()
+
+    const studentsCallIndex = client.from.mock.calls.findIndex(
+      ([table]: [string]) => table === 'students',
+    )
+    expect(studentsCallIndex).toBeGreaterThanOrEqual(0)
+    const studentsChain = client.from.mock.results[studentsCallIndex].value as {
+      eq: jest.Mock
+    }
+    expect(studentsChain.eq).toHaveBeenCalledWith('school_id', MOCK_USER.id)
+    expect(studentsChain.eq).not.toHaveBeenCalledWith('user_id', MOCK_USER.id)
+  })
 })

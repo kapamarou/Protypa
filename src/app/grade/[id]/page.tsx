@@ -54,8 +54,8 @@ export default async function GradePage({
     .eq("paper_id", id)
     .order("number", { ascending: true });
 
-  // Mint an initial signed URL server-side so the iframe loads immediately.
-  // Client will refresh via /api/papers/[id]/pdf when needed.
+  // Mint a short-lived signed URL server-side so the iframe loads immediately.
+  // NOTE: this is the orphaned legacy grading path (see docs/LEGACY_GRADING.md).
   let pdfUrl: string | null = null;
   if (paper) {
     const admin = createSupabaseServiceClient();
