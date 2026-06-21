@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { el } from "@/lib/i18n/el";
-import type { Question } from "@/lib/types";
+import type { ClientQuestion } from "@/lib/types";
 import type { GradingResult } from "@/lib/grading";
 
 export function GradingClient({
@@ -14,7 +14,7 @@ export function GradingClient({
   paperId: string;
   paperTitle: string;
   pdfUrl: string | null;
-  questions: Question[];
+  questions: ClientQuestion[];
 }) {
   const [studentName, setStudentName] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});

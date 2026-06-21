@@ -6,7 +6,7 @@ import {
 } from "@/lib/supabase/server";
 import { hasAccessToPaper } from "@/lib/entitlements";
 import { el } from "@/lib/i18n/el";
-import type { Question } from "@/lib/types";
+import type { ClientQuestion } from "@/lib/types";
 import { GradingClient } from "./GradingClient";
 
 export default async function GradePage({
@@ -44,9 +44,13 @@ export default async function GradePage({
     .select("*")
     .eq("id", id)
     .single();
+  // SECURITY (WP-C1): select ONLY the fields the client needs. Never select
+  // `correct_answer` here — `questions` is passed to a "use client" component,
+  // so any selected column is serialized into the RSC payload and readable in
+  // DevTools before answering. Scoring re-fetches the key server-side in /api/grade.
   const { data: questions } = await supabase
     .from("questions")
-    .select("*")
+    .select("id, number, qtype, prompt_el, choices")
     .eq("paper_id", id)
     .order("number", { ascending: true });
 
@@ -66,7 +70,7 @@ export default async function GradePage({
       paperId={id}
       paperTitle={paper?.title_el ?? ""}
       pdfUrl={pdfUrl}
-      questions={(questions as Question[]) ?? []}
+      questions={(questions as ClientQuestion[]) ?? []}
     />
   );
 }
