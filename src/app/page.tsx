@@ -123,7 +123,7 @@ function Features() {
     <>
       {/* Intro + Τι πουλάμε */}
       <section className="relative bg-white py-10 md:py-18 overflow-hidden">
-        <img src="/TransparentAssets/Asset 8.png" alt="" aria-hidden="true" className="pointer-events-none select-none absolute top-8 right-4 w-24 md:w-36 opacity-70 rotate-12 hidden sm:block" />
+        <img src="/TransparentAssets/Asset 8.png" alt="" aria-hidden="true" loading="lazy" className="pointer-events-none select-none absolute top-8 right-4 w-24 md:w-36 opacity-70 rotate-12 hidden sm:block" />
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="max-w-3xl mb-10">
             <div className="text-[10px] font-bold tracking-[0.25em] uppercase text-brand mb-3">
@@ -180,7 +180,7 @@ function Features() {
             {/* Big card — Φροντιστήριο */}
             <Link href="/sxetika" className="sm:col-span-6 md:col-span-4 md:row-span-2 relative rounded-3xl bg-accent-purple hover:bg-[#6500b0] p-8 md:p-10 overflow-hidden group hover:-translate-y-1 transition-all duration-300 block cursor-pointer">
               <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-brand/10 blur-3xl" />
-              <img src="/TransparentAssets/Asset 9.png" alt="" aria-hidden="true" className="pointer-events-none select-none absolute bottom-4 right-4 w-28 md:w-40 opacity-30 rotate-6" />
+              <img src="/TransparentAssets/Asset 9.png" alt="" aria-hidden="true" loading="lazy" className="pointer-events-none select-none absolute bottom-4 right-4 w-28 md:w-40 opacity-30 rotate-6" />
               <div className="relative">
                 <div className="text-[10px] font-bold tracking-[0.25em] uppercase text-paper/50">Στο Φροντιστήριο</div>
                 <h3 className="mt-4 font-display text-2xl sm:text-4xl md:text-5xl leading-none text-paper">
@@ -263,8 +263,8 @@ function MidCta() {
   return (
     <section className="relative bg-[#7c00d0] clip-x overflow-hidden">
       {/* Sprite decorations */}
-      <img src="/TransparentAssets/Asset 7.png" alt="" aria-hidden="true" className="pointer-events-none select-none absolute bottom-0 right-8 w-40 md:w-64 opacity-80 rotate-6 hidden sm:block" />
-      <img src="/TransparentAssets/Asset 18.png" alt="" aria-hidden="true" className="pointer-events-none select-none absolute top-6 right-[30%] w-20 md:w-28 opacity-60 -rotate-12 hidden lg:block" />
+      <img src="/TransparentAssets/Asset 7.png" alt="" aria-hidden="true" loading="lazy" className="pointer-events-none select-none absolute bottom-0 right-8 w-40 md:w-64 opacity-80 rotate-6 hidden sm:block" />
+      <img src="/TransparentAssets/Asset 18.png" alt="" aria-hidden="true" loading="lazy" className="pointer-events-none select-none absolute top-6 right-[30%] w-20 md:w-28 opacity-60 -rotate-12 hidden lg:block" />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 py-14 md:py-22">
         <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -340,8 +340,8 @@ function HowItWorks() {
     <section className="relative py-10 md:py-20 bg-brand overflow-hidden">
       <div className="hidden sm:block pointer-events-none absolute -top-40 right-0 w-[30rem] h-[30rem] rounded-full bg-white/10 blur-3xl" />
       {/* Sprite decorations */}
-      <img src="/TransparentAssets/Asset 10.png" alt="" aria-hidden="true" className="pointer-events-none select-none absolute top-10 right-8 w-28 md:w-44 opacity-75 -rotate-6 hidden sm:block" />
-      <img src="/TransparentAssets/Asset 11.png" alt="" aria-hidden="true" className="pointer-events-none select-none absolute bottom-8 right-4 w-24 md:w-36 opacity-70 rotate-12 hidden sm:block" />
+      <img src="/TransparentAssets/Asset 10.png" alt="" aria-hidden="true" loading="lazy" className="pointer-events-none select-none absolute top-10 right-8 w-28 md:w-44 opacity-75 -rotate-6 hidden sm:block" />
+      <img src="/TransparentAssets/Asset 11.png" alt="" aria-hidden="true" loading="lazy" className="pointer-events-none select-none absolute bottom-8 right-4 w-24 md:w-36 opacity-70 rotate-12 hidden sm:block" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
         <div className="max-w-3xl mb-10">
@@ -383,7 +383,7 @@ function Manifesto() {
       <div className="pointer-events-none absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white/5 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-brand/20 blur-3xl" />
       {/* Sprite decorations */}
-      <img src="/TransparentAssets/Asset 13.png" alt="" aria-hidden="true" className="pointer-events-none select-none absolute top-6 right-6 w-28 md:w-40 opacity-70 rotate-6 hidden sm:block" />
+      <img src="/TransparentAssets/Asset 13.png" alt="" aria-hidden="true" loading="lazy" className="pointer-events-none select-none absolute top-6 right-6 w-28 md:w-40 opacity-70 rotate-6 hidden sm:block" />
       <div className="relative mx-auto max-w-4xl px-4 sm:px-6 text-center">
         <div className="text-sm md:text-base font-bold tracking-[0.25em] uppercase text-accent mb-6">
           {el.home.manifestoEyebrow}

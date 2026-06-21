@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { el } from "@/lib/i18n/el";
+import Image from "next/image";
 
 function SignInForm() {
   const router = useRouter();
@@ -66,11 +67,13 @@ export default function SignInPage() {
     <div className="min-h-[calc(100vh-3.5rem)] grid md:grid-cols-[1fr_1.1fr]">
       {/* Left brand panel */}
       <div className="hidden md:flex flex-col justify-between p-10 relative overflow-hidden">
-        <img
+        <Image
           src="/auth-welcome.jpg"
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover"
+          fill
+          style={{ objectFit: "cover" }}
+          sizes="50vw"
         />
         <div className="absolute inset-0 bg-gradient-to-br from-[#7c00d0]/85 via-[#7c00d0]/70 to-[#7c00d0]/95 mix-blend-multiply" />
         <div />

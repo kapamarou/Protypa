@@ -4,7 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Chrome } from "@/components/layout/Chrome";
-import Chatbot from "@/components/Chatbot";
+import { ChatbotLoader } from "@/components/ChatbotLoader";
 import { el } from "@/lib/i18n/el";
 
 const notoSans = Noto_Sans({
@@ -39,7 +39,7 @@ export default function RootLayout({
         <Chrome><Header /></Chrome>
         <main id="main-content" className="flex-1">{children}</main>
         <Chrome><Footer /></Chrome>
-        <Chatbot />
+        <ChatbotLoader />
       </body>
     </html>
   );

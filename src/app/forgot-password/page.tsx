@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { el } from "@/lib/i18n/el";
+import Image from "next/image";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -28,11 +29,13 @@ export default function ForgotPasswordPage() {
       {/* Left brand panel */}
       <div className="hidden md:flex flex-col bg-[#7c00d0] p-10 relative overflow-hidden">
         {/* Background image */}
-        <img
+        <Image
           src="/forgotPassword.jpg"
           alt=""
           aria-hidden="true"
-          className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover"
+          fill
+          style={{ objectFit: "cover" }}
+          sizes="50vw"
         />
         {/* Purple wash so the headline + body copy stay legible over the photo */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#7c00d0]/85 via-[#7c00d0]/60 to-[#7c00d0]/85" />

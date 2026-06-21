@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Post } from "@/lib/types";
@@ -49,13 +50,17 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         )}
 
         {post.cover_image_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={post.cover_image_url}
-            alt=""
-            aria-hidden="true"
-            className="w-full aspect-[16/9] object-cover rounded-2xl mt-8"
-          />
+          <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden mt-8">
+            <Image
+              src={post.cover_image_url}
+              alt=""
+              aria-hidden="true"
+              fill
+              style={{ objectFit: "cover" }}
+              sizes="(max-width: 768px) 100vw, 800px"
+              loading="lazy"
+            />
+          </div>
         )}
 
         <div className="mt-10 prose prose-lg max-w-none text-ink/80 leading-relaxed whitespace-pre-wrap">

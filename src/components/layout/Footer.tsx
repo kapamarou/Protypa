@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { el } from "@/lib/i18n/el";
 
 export function Footer() {
@@ -10,7 +11,7 @@ export function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <Link href="/" className="inline-block group">
-              <img src="/Logos/mainLogo.png" alt="PROTUPA.GR" className="h-8 w-auto group-hover:opacity-80 transition-opacity" />
+              <Image src="/Logos/mainLogo.png" alt="PROTUPA.GR" width={184} height={32} className="h-8 w-auto group-hover:opacity-80 transition-opacity" />
             </Link>
             <p className="mt-4 text-sm text-paper max-w-sm leading-relaxed">
               {el.brand.tagline}. Πραγματικά θέματα, έξυπνη διόρθωση και

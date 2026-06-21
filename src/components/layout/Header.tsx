@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { el } from "@/lib/i18n/el";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SignOutButton } from "./SignOutButton";
@@ -13,7 +14,7 @@ export async function Header() {
       <div className="mx-auto max-w-7xl flex items-center justify-between px-4 sm:px-6 h-14 md:h-16">
         {/* Logo */}
         <Link href="/" className="group flex items-center">
-          <img src="/Logos/mainLogo.png" alt="PROTUPA.GR" className="h-7 md:h-8 w-auto group-hover:opacity-80 transition-opacity" />
+          <Image src="/Logos/mainLogo.png" alt="PROTUPA.GR" width={184} height={32} className="h-7 md:h-8 w-auto group-hover:opacity-80 transition-opacity" preload={true} />
         </Link>
 
         {/* Desktop nav */}

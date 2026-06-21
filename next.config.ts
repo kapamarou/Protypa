@@ -38,6 +38,12 @@ const SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**.supabase.co" },
+      { protocol: "https", hostname: "**.supabase.in" },
+    ],
+  },
   // The PDF watermark route reads NotoSans-Regular.ttf at runtime via
   // `fs.readFile`. Tell Next.js to include the font in the serverless
   // function's deployed bundle — otherwise it'd be missing in production.

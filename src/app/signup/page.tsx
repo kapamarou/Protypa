@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { el } from "@/lib/i18n/el";
 import { scorePassword, validatePassword } from "@/lib/password";
+import Image from "next/image";
 
 type AccountType = "school" | "parent";
 
@@ -110,7 +111,7 @@ export default function SignUpPage() {
     <div className="min-h-[calc(100vh-3.5rem)] grid md:grid-cols-[1fr_1.1fr]">
       {/* Left brand panel */}
       <div className="hidden md:flex flex-col justify-between p-10 relative overflow-hidden">
-        <img src="/auth-start.jpg" alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
+        <Image src="/auth-start.jpg" alt="" aria-hidden="true" fill style={{ objectFit: "cover" }} sizes="50vw" />
         <div className="absolute inset-0 bg-gradient-to-br from-[#056ef5]/85 via-[#056ef5]/70 to-[#056ef5]/95 mix-blend-multiply" />
         <div />
         <div className="relative z-10">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Post } from "@/lib/types";
 
@@ -100,13 +101,17 @@ function PostCard({ post }: { post: Post }) {
   return (
     <Link href={`/nea/${post.slug}`} className="block group rounded-3xl border border-ink/10 p-7 md:p-9 hover:border-[#056ef5]/30 hover:shadow-lg transition-all">
       {post.cover_image_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={post.cover_image_url}
-          alt=""
-          aria-hidden="true"
-          className="w-full aspect-[16/7] object-cover rounded-2xl mb-5"
-        />
+        <div className="relative w-full aspect-[16/7] rounded-2xl overflow-hidden mb-5">
+          <Image
+            src={post.cover_image_url}
+            alt=""
+            aria-hidden="true"
+            fill
+            style={{ objectFit: "cover" }}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            loading="lazy"
+          />
+        </div>
       )}
       <div className="flex items-center gap-3 mb-4">
         {post.tag && (
