@@ -14,7 +14,7 @@ export async function Header() {
       <div className="mx-auto max-w-7xl flex items-center justify-between px-4 sm:px-6 h-14 md:h-16">
         {/* Logo */}
         <Link href="/" className="group flex items-center">
-          <Image src="/Logos/mainLogo.png" alt="PROTUPA.GR" width={184} height={32} className="h-7 md:h-8 w-auto group-hover:opacity-80 transition-opacity" preload={true} />
+          <Image src="/Logos/mainLogo.png" alt="PROTUPA.GR" width={184} height={32} loading="eager" className="h-7 md:h-8 w-auto group-hover:opacity-80 transition-opacity" />
         </Link>
 
         {/* Desktop nav */}

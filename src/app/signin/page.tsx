@@ -72,8 +72,8 @@ export default function SignInPage() {
           alt=""
           aria-hidden="true"
           fill
+          unoptimized
           style={{ objectFit: "cover" }}
-          sizes="50vw"
         />
         <div className="absolute inset-0 bg-gradient-to-br from-[#7c00d0]/85 via-[#7c00d0]/70 to-[#7c00d0]/95 mix-blend-multiply" />
         <div />

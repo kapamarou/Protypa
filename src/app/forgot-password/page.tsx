@@ -34,8 +34,8 @@ export default function ForgotPasswordPage() {
           alt=""
           aria-hidden="true"
           fill
+          unoptimized
           style={{ objectFit: "cover" }}
-          sizes="50vw"
         />
         {/* Purple wash so the headline + body copy stay legible over the photo */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#7c00d0]/85 via-[#7c00d0]/60 to-[#7c00d0]/85" />
