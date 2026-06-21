@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { checkRateLimit, tooManyRequests } from "@/lib/ratelimit";
 import { getActivePackages } from "@/lib/entitlements";
+import { captureException } from "@/lib/observability";
 import { computeScore, gradeCountsForStats } from "@/lib/scoring";
 import type { SimulationQuestionTag, Simulation, StudentSimulationGrade, Student } from "@/lib/types";
 
@@ -38,17 +39,27 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (!rl.allowed) return tooManyRequests();
 
   // Verify student belongs to this account
-  const { data: studentRow } = await supabase
+  const { data: studentRow, error: studentErr } = await supabase
     .from("students").select("*").eq("id", id).eq("school_id", user.id).maybeSingle();
+  // E2-F: a DB error must not look like "student not found" (404).
+  if (studentErr) {
+    captureException(studentErr, { route: "api/ai-summary", extra: { stage: "student" } });
+    return NextResponse.json({ error: "server error" }, { status: 500 });
+  }
   if (!studentRow) return NextResponse.json({ error: "not found" }, { status: 404 });
   const student = studentRow as Student;
 
   // Fetch grades with simulations
-  const { data: gradesRaw } = await supabase
+  const { data: gradesRaw, error: gradesErr } = await supabase
     .from("student_simulation_grades")
     .select("*, simulations(*)")
     .eq("student_id", id)
     .order("submitted_at", { ascending: true });
+  // Don't generate a misleading AI summary from a failed (empty) grades query.
+  if (gradesErr) {
+    captureException(gradesErr, { route: "api/ai-summary", extra: { stage: "grades" } });
+    return NextResponse.json({ error: "server error" }, { status: 500 });
+  }
   const grades = (gradesRaw ?? []) as (StudentSimulationGrade & { simulations: Simulation })[];
 
   const eligibleGrades = grades.filter((g) =>

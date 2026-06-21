@@ -5,6 +5,7 @@ import {
 } from "@/lib/supabase/server";
 import { getActivePackages } from "@/lib/entitlements";
 import { applyWatermark } from "@/lib/pdf/watermark";
+import { captureException } from "@/lib/observability";
 import type { ExamPaperKind } from "@/lib/types";
 
 // GET /api/account/exam-paper/[id]?kind=greek-questions
@@ -123,19 +124,27 @@ export async function GET(
 
   // 5. For schools, stamp the trade_name across every page.
   //    For parents, serve raw — the boss's anti-piracy ask was schools-only.
-  const { data: profile } = await admin
+  const { data: profile, error: profileErr } = await admin
     .from("profiles")
     .select("account_type")
     .eq("id", user.id)
     .maybeSingle();
+  // E2-D: capture, but keep the SECURE default — on any doubt we treat the user
+  // as a school and watermark (never serve a school a raw, un-stamped PDF).
+  if (profileErr) {
+    captureException(profileErr, { route: "api/exam-paper", extra: { stage: "profile" } });
+  }
 
   let finalBytes: Uint8Array = originalBytes;
   if (profile?.account_type === "school" || !profile?.account_type) {
-    const { data: school } = await admin
+    const { data: school, error: schoolErr } = await admin
       .from("schools")
       .select("trade_name, legal_name")
       .eq("id", user.id)
       .maybeSingle();
+    if (schoolErr) {
+      captureException(schoolErr, { route: "api/exam-paper", extra: { stage: "school" } });
+    }
     const watermarkText =
       (school?.trade_name?.trim() || school?.legal_name?.trim() || user.email || "")
         .toString()

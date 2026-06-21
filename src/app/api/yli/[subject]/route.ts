@@ -5,6 +5,7 @@ import {
 } from "@/lib/supabase/server";
 import { getActivePackages } from "@/lib/entitlements";
 import { checkRateLimit, tooManyRequests } from "@/lib/ratelimit";
+import { captureException } from "@/lib/observability";
 
 const FILENAMES: Record<string, string> = {
   greek:       "Ύλη Γλώσσας.pdf",
@@ -90,12 +91,17 @@ export async function GET(
 
   // ── Admin visibility toggle (applies to entitled customers, not admins) ────
   if (!isAdmin) {
-    const { data: setting } = await admin
+    const { data: setting, error: settingErr } = await admin
       .from("app_settings")
       .select("value")
       .eq("key", SETTING_KEYS[subject])
       .maybeSingle();
 
+    // E2-E: a DB failure here must not masquerade as "not visible" (403).
+    if (settingErr) {
+      captureException(settingErr, { route: "api/yli", extra: { stage: "visibility" } });
+      return NextResponse.json({ error: "server error" }, { status: 500 });
+    }
     if (setting?.value !== "true") {
       return NextResponse.json(
         { error: "Η ύλη δεν είναι διαθέσιμη αυτή τη στιγμή." },

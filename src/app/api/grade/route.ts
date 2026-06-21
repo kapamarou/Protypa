@@ -6,6 +6,7 @@ import {
 import { hasAccessToPaper } from "@/lib/entitlements";
 import { scoreAnswers } from "@/lib/grading";
 import { checkRateLimit, tooManyRequests } from "@/lib/ratelimit";
+import { captureException } from "@/lib/observability";
 import type { Question } from "@/lib/types";
 
 export async function POST(req: Request) {
@@ -35,11 +36,16 @@ export async function POST(req: Request) {
   }
 
   // Server is the only authority on scoring — re-fetch questions, never trust the client.
-  const { data: questions } = await supabase
+  const { data: questions, error: qErr } = await supabase
     .from("questions")
     .select("*")
     .eq("paper_id", paper_id)
     .order("number", { ascending: true });
+  // E2-B: a DB error is a 5xx, not a misleading 404 ("paper has no questions").
+  if (qErr) {
+    captureException(qErr, { route: "api/grade", extra: { stage: "fetch-questions" } });
+    return NextResponse.json({ error: "server error" }, { status: 500 });
+  }
   if (!questions || questions.length === 0) {
     return NextResponse.json({ error: "no questions" }, { status: 404 });
   }
@@ -47,7 +53,7 @@ export async function POST(req: Request) {
   const result = scoreAnswers(questions as Question[], answers);
 
   const admin = createSupabaseServiceClient();
-  await admin.from("grading_sessions").insert({
+  const { error: insErr } = await admin.from("grading_sessions").insert({
     user_id: user.id,
     paper_id,
     student_name: student_name || null,
@@ -56,6 +62,11 @@ export async function POST(req: Request) {
     total: result.total,
     type_breakdown: result.type_breakdown,
   });
+  // Don't silently lose a graded result — report the failure.
+  if (insErr) {
+    captureException(insErr, { route: "api/grade", extra: { stage: "persist-grade" } });
+    return NextResponse.json({ error: "could not save result" }, { status: 500 });
+  }
 
   return NextResponse.json(result);
 }

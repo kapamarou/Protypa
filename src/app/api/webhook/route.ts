@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
+import { captureException } from "@/lib/observability";
 import type Stripe from "stripe";
 
 // Stripe webhook — receives payment events and provisions / revokes access.
@@ -153,13 +154,19 @@ export async function POST(req: Request) {
   }
 
   if (outcome.status === "retry") {
-    // B1: 500 ⇒ Stripe retries. (WP-E wires Sentry capture here.)
-    console.error("webhook transient error:", outcome.error);
+    // B1: 500 ⇒ Stripe retries. Capture so a payment never fails invisibly.
+    captureException(new Error(outcome.error ?? "webhook transient failure"), {
+      route: "api/webhook",
+      extra: { eventType: event.type, kind: "transient" },
+    });
     return NextResponse.json({ error: "handler failed" }, { status: 500 });
   }
   if (outcome.status === "reject") {
-    // Permanent condition — ack so Stripe stops retrying, but record it.
-    console.error("webhook rejected event:", outcome.error);
+    // Permanent condition — ack so Stripe stops retrying, but record it loudly.
+    captureException(new Error(outcome.error ?? "webhook rejected event"), {
+      route: "api/webhook",
+      extra: { eventType: event.type, kind: "rejected" },
+    });
   }
 
   return NextResponse.json({ received: true });

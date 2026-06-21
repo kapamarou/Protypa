@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import { checkRateLimit, tooManyRequests } from "@/lib/ratelimit";
+import { captureException } from "@/lib/observability";
 
 export async function POST(req: Request) {
   const supabase = await createSupabaseServerClient();
@@ -24,11 +25,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "missing package_id" }, { status: 400 });
   }
 
-  const { data: pkg } = await supabase
+  const { data: pkg, error: pkgErr } = await supabase
     .from("packages")
     .select("*")
     .eq("id", package_id)
-    .single();
+    .maybeSingle();
+  // E2-A: distinguish a real DB failure (5xx) from a genuinely-missing row (404).
+  if (pkgErr) {
+    captureException(pkgErr, { route: "api/checkout", extra: { stage: "package-lookup" } });
+    return NextResponse.json({ error: "server error" }, { status: 500 });
+  }
   if (!pkg) {
     return NextResponse.json({ error: "package not found" }, { status: 404 });
   }
