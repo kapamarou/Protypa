@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
-type Subject = "greek" | "math";
+type Subject = "greek" | "math" | "apodesmeusi";
 
 type YliState = {
   uploading: boolean;
@@ -13,15 +13,17 @@ type YliState = {
   toggling: boolean;
 };
 
-const LABELS: Record<Subject, { title: string; color: string; settingKey: string }> = {
-  greek: { title: "Γλώσσα",      color: "#7c00d0", settingKey: "yli_greek_visible" },
-  math:  { title: "Μαθηματικά",  color: "#056ef5", settingKey: "yli_math_visible"  },
+const LABELS: Record<Subject, { title: string; subtitle: string; color: string; settingKey: string }> = {
+  greek:       { title: "Γλώσσα",                       subtitle: "Ύλη",                            color: "#7c00d0", settingKey: "yli_greek_visible"       },
+  math:        { title: "Μαθηματικά",                   subtitle: "Ύλη",                            color: "#056ef5", settingKey: "yli_math_visible"        },
+  apodesmeusi: { title: "Σύσταση",                       subtitle: "Αποδέσμευση",                    color: "#059669", settingKey: "yli_apodesmeusi_visible" },
 };
 
 export default function AdminYliPage() {
   const [state, setState] = useState<Record<Subject, YliState>>({
-    greek: { uploading: false, error: null, success: false, visible: false, toggling: false },
-    math:  { uploading: false, error: null, success: false, visible: false, toggling: false },
+    greek:       { uploading: false, error: null, success: false, visible: false, toggling: false },
+    math:        { uploading: false, error: null, success: false, visible: false, toggling: false },
+    apodesmeusi: { uploading: false, error: null, success: false, visible: false, toggling: false },
   });
   const [loading, setLoading] = useState(true);
 
@@ -31,13 +33,14 @@ export default function AdminYliPage() {
     supabase
       .from("app_settings")
       .select("key, value")
-      .in("key", ["yli_greek_visible", "yli_math_visible"])
+      .in("key", ["yli_greek_visible", "yli_math_visible", "yli_apodesmeusi_visible"])
       .then(({ data }) => {
         if (!data) return;
         const map = Object.fromEntries(data.map((r) => [r.key, r.value === "true"]));
         setState((prev) => ({
-          greek: { ...prev.greek, visible: map["yli_greek_visible"] ?? false },
-          math:  { ...prev.math,  visible: map["yli_math_visible"]  ?? false },
+          greek:       { ...prev.greek,       visible: map["yli_greek_visible"]       ?? false },
+          math:        { ...prev.math,        visible: map["yli_math_visible"]        ?? false },
+          apodesmeusi: { ...prev.apodesmeusi, visible: map["yli_apodesmeusi_visible"] ?? false },
         }));
         setLoading(false);
       });
@@ -78,7 +81,7 @@ export default function AdminYliPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="text-[10px] font-bold tracking-[0.25em] uppercase text-white/80 mb-2">Admin</div>
@@ -98,9 +101,9 @@ export default function AdminYliPage() {
       {loading ? (
         <div className="text-center py-12 text-white/40 text-sm">Φόρτωση…</div>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-4">
-          {(["greek", "math"] as Subject[]).map((subject) => {
-            const { title, color, settingKey } = LABELS[subject];
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {(["greek", "math", "apodesmeusi"] as Subject[]).map((subject) => {
+            const { title, subtitle, color, settingKey } = LABELS[subject];
             const { uploading, error, success, visible, toggling } = state[subject];
             return (
               <div key={subject} className="rounded-2xl border border-white/10 bg-white/5 p-6 space-y-5">
@@ -108,7 +111,7 @@ export default function AdminYliPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="text-[10px] font-black tracking-[0.2em] uppercase" style={{ color }}>
-                      Ύλη
+                      {subtitle}
                     </div>
                     <div className="font-display text-xl text-white mt-0.5">{title}</div>
                   </div>

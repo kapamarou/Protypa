@@ -2,13 +2,15 @@ import { NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 
 const FILENAMES: Record<string, string> = {
-  greek: "Ύλη Γλώσσας.pdf",
-  math: "Ύλη Μαθηματικών.pdf",
+  greek:       "Ύλη Γλώσσας.pdf",
+  math:        "Ύλη Μαθηματικών.pdf",
+  apodesmeusi: "Σύσταση Αποδέσμευσης Θεμάτων.pdf",
 };
 
 const SETTING_KEYS: Record<string, string> = {
-  greek: "yli_greek_visible",
-  math: "yli_math_visible",
+  greek:       "yli_greek_visible",
+  math:        "yli_math_visible",
+  apodesmeusi: "yli_apodesmeusi_visible",
 };
 
 export async function GET(

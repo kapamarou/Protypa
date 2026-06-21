@@ -5,7 +5,7 @@ import type { Post } from "@/lib/types";
 
 const CATEGORIES = ["Όλα", "Νέα Θέματα", "Ανακοινώσεις", "Στατιστικά"] as const;
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function NewsPage({
   searchParams,

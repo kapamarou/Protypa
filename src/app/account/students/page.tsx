@@ -4,9 +4,9 @@ import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Student } from "@/lib/types";
 
+const DIMOTIKO = ["Δημοτικό"];
 const GYMNASIO = ["Γυμνάσιο"];
-const LYKEIO   = ["Λύκειο"];
-const CLASS_YEARS = [...GYMNASIO, ...LYKEIO];
+const CLASS_YEARS = [...DIMOTIKO, ...GYMNASIO];
 
 const AVATAR_COLORS = ["#056ef5", "#7c00d0", "#0451b8", "#5a0099", "#1b1b1b"];
 function pickColor(seed: string): string {
@@ -91,15 +91,19 @@ export default function StudentsPage() {
       );
       setSaving(false); setShowForm(false); resetForm(); return;
     }
-    const payload = {
+    // Only include optional columns when they have a value — PostgREST will
+    // error on null for a column that doesn't yet exist in the schema cache.
+    const payload: Record<string, unknown> = {
       school_id: user.id,
-      ...form,
+      first_name: form.first_name,
+      last_name: form.last_name,
       class_year: form.class_year || null,
+      subjects: form.subjects,
       notes: form.notes || null,
-      mother_name: form.mother_name || null,
-      father_name: form.father_name || null,
-      gender: form.gender || null,
     };
+    if (form.mother_name) payload.mother_name = form.mother_name;
+    if (form.father_name) payload.father_name = form.father_name;
+    if (form.gender)      payload.gender       = form.gender;
     const { error: err } = editId
       ? await supabase.from("students").update(payload).eq("id", editId)
       : await supabase.from("students").insert(payload);
@@ -125,8 +129,8 @@ export default function StudentsPage() {
 
   const counts = useMemo(() => ({
     total: students.length,
+    dimotiko: students.filter((s) => DIMOTIKO.includes(s.class_year ?? "")).length,
     gymnasio: students.filter((s) => GYMNASIO.includes(s.class_year ?? "")).length,
-    lykeio: students.filter((s) => LYKEIO.includes(s.class_year ?? "")).length,
     greek: students.filter((s) => s.subjects.includes("greek")).length,
     math: students.filter((s) => s.subjects.includes("math")).length,
   }), [students]);
@@ -164,8 +168,8 @@ export default function StudentsPage() {
       {students.length > 0 && (
         <div className="border-y border-ink/10 divide-x divide-ink/10 grid grid-cols-2 md:grid-cols-4">
           <StudentStat label="Σύνολο μαθητών"   value={counts.total}    color="#056ef5" />
-          <StudentStat label="Γυμνάσιο"          value={counts.gymnasio} color="#7c00d0" />
-          <StudentStat label="Λύκειο"            value={counts.lykeio}   color="#056ef5" />
+          <StudentStat label="Δημοτικό"           value={counts.dimotiko} color="#7c00d0" />
+          <StudentStat label="Γυμνάσιο"          value={counts.gymnasio} color="#056ef5" />
           <StudentStat label="Σε δύο μαθήματα" value={students.filter((s) => s.subjects.length === 2).length} color="#7c00d0" />
         </div>
       )}
@@ -212,8 +216,8 @@ export default function StudentsPage() {
                 <select value={form.class_year} onChange={(e) => setForm((p) => ({ ...p, class_year: e.target.value }))}
                   className="mt-2 w-full bg-white border-0 border-b-2 border-ink/20 px-0 py-2.5 text-base font-display text-ink focus:outline-none focus:border-[#056ef5] transition-colors cursor-pointer">
                   <option value="">— Δεν έχει οριστεί —</option>
+                  <optgroup label="Δημοτικό">{DIMOTIKO.map((cy) => <option key={cy} value={cy}>{cy}</option>)}</optgroup>
                   <optgroup label="Γυμνάσιο">{GYMNASIO.map((cy) => <option key={cy} value={cy}>{cy}</option>)}</optgroup>
-                  <optgroup label="Λύκειο">{LYKEIO.map((cy) => <option key={cy} value={cy}>{cy}</option>)}</optgroup>
                 </select>
               </label>
             </div>
@@ -262,8 +266,8 @@ export default function StudentsPage() {
           <select value={filterClass} onChange={(e) => setFilterClass(e.target.value)}
             className="px-3 py-1.5 rounded-md border border-ink/15 text-sm text-ink bg-white focus:outline-none focus:border-[#056ef5] transition-colors cursor-pointer">
             <option value="">Όλες οι τάξεις</option>
+            <optgroup label="Δημοτικό">{DIMOTIKO.map((cy) => <option key={cy} value={cy}>{cy}</option>)}</optgroup>
             <optgroup label="Γυμνάσιο">{GYMNASIO.map((cy) => <option key={cy} value={cy}>{cy}</option>)}</optgroup>
-            <optgroup label="Λύκειο">{LYKEIO.map((cy) => <option key={cy} value={cy}>{cy}</option>)}</optgroup>
           </select>
           <div className="flex border border-ink/15 rounded-md">
             <button onClick={() => setView("grid")} className={`px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${view === "grid" ? "bg-ink text-white" : "text-ink/55 hover:text-ink"}`}>Κάρτες</button>
@@ -296,11 +300,11 @@ export default function StudentsPage() {
         <ListView students={filtered} onEdit={startEdit} onDelete={remove} />
       ) : (
         <div className="space-y-8">
-          {GYMNASIO.some((cy) => byClass[cy]?.length > 0) && (
-            <ClassSection title="Γυμνάσιο" color="#7c00d0" groups={GYMNASIO.filter((cy) => byClass[cy]?.length > 0).map((cy) => ({ title: cy, students: byClass[cy] }))} onEdit={startEdit} onDelete={remove} />
+          {DIMOTIKO.some((cy) => byClass[cy]?.length > 0) && (
+            <ClassSection title="Δημοτικό" color="#7c00d0" groups={DIMOTIKO.filter((cy) => byClass[cy]?.length > 0).map((cy) => ({ title: cy, students: byClass[cy] }))} onEdit={startEdit} onDelete={remove} />
           )}
-          {LYKEIO.some((cy) => byClass[cy]?.length > 0) && (
-            <ClassSection title="Λύκειο" color="#056ef5" groups={LYKEIO.filter((cy) => byClass[cy]?.length > 0).map((cy) => ({ title: cy, students: byClass[cy] }))} onEdit={startEdit} onDelete={remove} />
+          {GYMNASIO.some((cy) => byClass[cy]?.length > 0) && (
+            <ClassSection title="Γυμνάσιο" color="#056ef5" groups={GYMNASIO.filter((cy) => byClass[cy]?.length > 0).map((cy) => ({ title: cy, students: byClass[cy] }))} onEdit={startEdit} onDelete={remove} />
           )}
           {noClass.length > 0 && (
             <ClassSection title="Χωρίς τάξη" groups={[{ title: "Χωρίς τάξη", students: noClass }]} onEdit={startEdit} onDelete={remove} />

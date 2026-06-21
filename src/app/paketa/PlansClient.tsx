@@ -213,7 +213,7 @@ function SchoolCard({
             ))}
           </div>
           <p className="mt-2 text-xs opacity-60">
-            Επέκταση: +5 μαθητές × 30€ + ΦΠΑ ανά πακέτο
+            Επέκταση: +5 μαθητές με 30€ + ΦΠΑ ανά πακέτο
           </p>
         </div>
 
@@ -263,7 +263,7 @@ function PriceBlock({ priceCents }: { priceCents: number }) {
         <span className="text-xs opacity-70 pb-2">+ ΦΠΑ / έτος</span>
       </div>
       <div className="mt-2 text-[11px] opacity-60 font-bold uppercase tracking-wider">
-        Ετήσιο πακέτο · αλλάζετε πακέτο όποτε θέλετε
+        Ετήσιο πακέτο
       </div>
     </div>
   );

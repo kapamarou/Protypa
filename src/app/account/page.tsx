@@ -582,17 +582,17 @@ const PREVIEW_DATA: DashboardData = {
   ],
   activity: [
     { kind: "graded",  title: "Διαγώνισμα 2",            subtitle: "Μαρία Παπαδοπούλου · βαθμός 92", when: "2 ώ." },
-    { kind: "student", title: "Σοφία Κωνσταντίνου",      subtitle: "Νέος μαθητής · Λύκειο",           when: "χθες" },
+    { kind: "student", title: "Σοφία Κωνσταντίνου",      subtitle: "Νέος μαθητής · Γυμνάσιο",         when: "χθες" },
     { kind: "unlock",  title: "Διαγώνισμα 3",            subtitle: "Ξεκλειδώθηκε · έως 20 Ιαν.",      when: "2 ημ." },
     { kind: "graded",  title: "Διαγώνισμα 1",            subtitle: "Γιώργης Αλεξίου · βαθμός 88",     when: "1 εβδ." },
     { kind: "package", title: "Πακέτο Bundle",           subtitle: "Αγορά · έως 15/6/2025",           when: "2 εβδ." },
   ],
   topStudents: [
-    { name: "Μαρία Παπαδοπούλου", class_year: "Γυμνάσιο", score: 92 },
-    { name: "Γιώργος Αλεξίου",   class_year: "Γυμνάσιο", score: 88 },
-    { name: "Ελένη Βασιλείου",   class_year: "Γυμνάσιο", score: 85 },
-    { name: "Νίκος Δημητρίου",   class_year: "Λύκειο",   score: 82 },
-    { name: "Σοφία Κωνσταντίνου", class_year: "Λύκειο",   score: 79 },
+    { name: "Μαρία Παπαδοπούλου", class_year: "Δημοτικό", score: 92 },
+    { name: "Γιώργος Αλεξίου",   class_year: "Δημοτικό", score: 88 },
+    { name: "Ελένη Βασιλείου",   class_year: "Δημοτικό", score: 85 },
+    { name: "Νίκος Δημητρίου",   class_year: "Γυμνάσιο", score: 82 },
+    { name: "Σοφία Κωνσταντίνου", class_year: "Γυμνάσιο", score: 79 },
   ],
   packages: [
     { name: "Πακέτο Bundle",  expires: "15 Ιουνίου 2025" },

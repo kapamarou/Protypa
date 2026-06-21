@@ -48,9 +48,10 @@ export default function PostForm({ initial, postId }: Props) {
     setUploading(false);
   }
 
-  async function save(action: "draft" | "schedule" | "publish_now") {
+  async function save(action: "draft" | "schedule" | "publish_now" | "keep") {
     if (!title.trim()) { setError("Συμπληρώστε τίτλο."); return; }
     if (!slug.trim()) { setError("Συμπληρώστε slug."); return; }
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug.trim())) { setError("Το slug πρέπει να περιέχει μόνο λατινικά γράμματα, αριθμούς και παύλες (π.χ. nea-themata)."); return; }
     if (!body.trim()) { setError("Συμπληρώστε κείμενο."); return; }
     if (action === "schedule" && !publishAt) { setError("Επιλέξτε ημ/νία δημοσίευσης."); return; }
 
@@ -59,8 +60,8 @@ export default function PostForm({ initial, postId }: Props) {
     let finalPublishAt: string | null = null;
     if (action === "publish_now") finalPublishAt = new Date().toISOString();
     else if (action === "schedule") finalPublishAt = new Date(publishAt).toISOString();
-    else if (action === "draft" && publishAt) finalPublishAt = new Date(publishAt).toISOString();
-    // If draft and no publishAt → null
+    else if (action === "keep") finalPublishAt = initial?.publish_at ?? null;
+    // draft → null
 
     const supabase = createSupabaseBrowserClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -110,15 +111,8 @@ export default function PostForm({ initial, postId }: Props) {
       </div>
 
       <div className="space-y-5">
-        {/* Title + slug */}
+        {/* Title */}
         <AdminField label="Τίτλος *" value={title} onChange={onTitleChange} placeholder="π.χ. Νέα θέματα Μαθηματικών" />
-        <AdminField
-          label="Slug (URL)"
-          value={slug}
-          onChange={(v) => { setSlug(v); setSlugTouched(true); }}
-          placeholder="auto-generated"
-          help={`URL: /nea/${slug || "[slug]"}`}
-        />
 
         {/* Tag */}
         <div>
@@ -216,10 +210,17 @@ export default function PostForm({ initial, postId }: Props) {
               Προγραμματισμός
             </button>
           )}
-          <button onClick={() => save("publish_now")} disabled={saving}
-            className="px-5 py-2 rounded-full bg-[#056ef5] text-white text-xs font-black uppercase tracking-wider hover:bg-[#0451b8] transition-colors disabled:opacity-50 cursor-pointer">
-            {saving ? "…" : "Δημοσίευση τώρα"}
-          </button>
+          {isEdit && initial?.publish_at ? (
+            <button onClick={() => save("keep")} disabled={saving}
+              className="px-5 py-2 rounded-full bg-[#056ef5] text-white text-xs font-black uppercase tracking-wider hover:bg-[#0451b8] transition-colors disabled:opacity-50 cursor-pointer">
+              {saving ? "…" : "Αποθήκευση"}
+            </button>
+          ) : (
+            <button onClick={() => save("publish_now")} disabled={saving}
+              className="px-5 py-2 rounded-full bg-[#056ef5] text-white text-xs font-black uppercase tracking-wider hover:bg-[#0451b8] transition-colors disabled:opacity-50 cursor-pointer">
+              {saving ? "…" : "Δημοσίευση τώρα"}
+            </button>
+          )}
           {isEdit && (
             <button onClick={remove} disabled={saving}
               className="ml-auto px-5 py-2 rounded-full border border-red-500/40 text-red-400 text-xs font-bold hover:bg-red-500/10 transition-colors disabled:opacity-50 cursor-pointer">
