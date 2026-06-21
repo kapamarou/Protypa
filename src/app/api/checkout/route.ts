@@ -45,7 +45,7 @@ export async function POST(req: Request) {
 
   // Use a server-controlled base URL — never trust the Origin header from the
   // client, which can be spoofed to redirect users to an attacker-controlled site.
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://protypa.gr").replace(/\/$/, "");
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://protupa.gr").replace(/\/$/, "");
   const stripe = getStripe();
   const session = await stripe.checkout.sessions.create({
     mode: "payment",

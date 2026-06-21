@@ -150,7 +150,7 @@ export default function AdminPackagesPage() {
         <p className="text-xs text-white/55">
           Στο Stripe Dashboard → Developers → Webhooks, προσθέστε endpoint:{" "}
           <code className="text-white bg-white/10 px-1.5 py-0.5 rounded text-[11px]">
-            https://protypa.gr/api/webhook
+            https://protupa.gr/api/webhook
           </code>
           {" "}και ενεργοποιήστε το event{" "}
           <code className="text-white bg-white/10 px-1.5 py-0.5 rounded text-[11px]">checkout.session.completed</code>.
