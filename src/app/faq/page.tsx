@@ -1,9 +1,32 @@
+import type { Metadata } from "next";
 import { el } from "@/lib/i18n/el";
+import { JsonLd } from "@/components/JsonLd";
 import { FaqClient } from "./FaqClient";
+
+export const metadata: Metadata = {
+  title: "Συχνές Ερωτήσεις",
+  description:
+    "Απαντήσεις για τα πακέτα, την πληρωμή, τη διόρθωση γραπτών και τα Πρότυπα Σχολεία — όλα όσα χρειάζεται να ξέρετε για το Protupa.",
+  alternates: { canonical: "/faq" },
+};
+
+// FAQPage structured data — makes answers eligible for rich results in Google.
+const FAQ_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: el.faq.categories.flatMap((c) =>
+    c.items.map((i) => ({
+      "@type": "Question",
+      name: i.q,
+      acceptedAnswer: { "@type": "Answer", text: i.a },
+    })),
+  ),
+};
 
 export default function FaqPage() {
   return (
     <div>
+      <JsonLd data={FAQ_SCHEMA} />
       <Hero />
       <FaqClient />
     </div>

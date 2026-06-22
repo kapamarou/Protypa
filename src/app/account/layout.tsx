@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { AccountNav } from "./AccountNav";
+
+// Private area — keep it out of search indexes (also blocked in robots.ts).
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createSupabaseServerClient();
