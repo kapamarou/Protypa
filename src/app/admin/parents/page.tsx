@@ -17,7 +17,7 @@ export default async function AdminParentsPage() {
   const supabase = await createSupabaseServerClient();
   if (!supabase) return null;
 
-  const { data: parents } = await supabase
+  const { data: parents, error } = await supabase
     .from("profiles")
     .select(`
       id, full_name, created_at, onboarding_complete,
@@ -52,7 +52,12 @@ export default async function AdminParentsPage() {
         <p className="mt-1 text-sm text-white/55">{rows.length} {rows.length === 1 ? "εγγεγραμμένος" : "εγγεγραμμένοι"}</p>
       </div>
 
-      {rows.length === 0 ? (
+      {error ? (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-12 text-center">
+          <p className="text-red-400 text-sm font-bold">Σφάλμα φόρτωσης</p>
+          <p className="text-white/55 text-xs mt-1">{error.message}</p>
+        </div>
+      ) : rows.length === 0 ? (
         <div className="rounded-2xl border border-white/10 p-12 text-center">
           <p className="text-white/80 text-sm">Δεν υπάρχουν εγγεγραμμένοι γονείς ακόμα.</p>
         </div>
