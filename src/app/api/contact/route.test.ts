@@ -19,7 +19,7 @@ const VALID_BODY = {
 
 describe('POST /api/contact', () => {
   beforeEach(() => {
-    (global as any).fetch = mockFetch
+    globalThis.fetch = mockFetch as unknown as typeof fetch
     process.env.BREVO_API_KEY = 'test-brevo-key'
     jest.clearAllMocks()
   })
@@ -81,21 +81,21 @@ describe('POST /api/contact', () => {
   it('sends the email to the correct recipient based on subject', async () => {
     mockFetch.mockResolvedValue({ ok: true })
     await POST(makeRequest({ ...VALID_BODY, subject: 'Τεχνικά' }))
-    const body = JSON.parse((mockFetch.mock.calls[0] as any[])[1].body)
+    const body = JSON.parse((mockFetch.mock.calls[0] as [string, { body: string }])[1].body)
     expect(body.to[0].email).toBe('support@protupa.gr')
   })
 
   it('falls back to info@protupa.gr for unknown subjects', async () => {
     mockFetch.mockResolvedValue({ ok: true })
     await POST(makeRequest({ ...VALID_BODY, subject: 'Άγνωστο Θέμα' }))
-    const body = JSON.parse((mockFetch.mock.calls[0] as any[])[1].body)
+    const body = JSON.parse((mockFetch.mock.calls[0] as [string, { body: string }])[1].body)
     expect(body.to[0].email).toBe('info@protupa.gr')
   })
 
   it('escapes HTML in user input before sending', async () => {
     mockFetch.mockResolvedValue({ ok: true })
     await POST(makeRequest({ ...VALID_BODY, name: '<script>alert(1)</script>' }))
-    const body = JSON.parse((mockFetch.mock.calls[0] as any[])[1].body)
+    const body = JSON.parse((mockFetch.mock.calls[0] as [string, { body: string }])[1].body)
     expect(body.htmlContent).not.toContain('<script>')
     expect(body.htmlContent).toContain('&lt;script&gt;')
   })

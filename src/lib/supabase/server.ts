@@ -37,13 +37,27 @@ export async function createSupabaseServerClient() {
   );
 }
 
+// True iff the service-role key is present. Lets routes return a graceful 503
+// instead of constructing a broken client.
+export function isServiceRoleConfigured(): boolean {
+  return (
+    !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    !!process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+}
+
 // Service-role client. Bypasses RLS. Only call from trusted server code
 // (webhooks, scoring API). Never expose to the browser.
 import { createClient } from "@supabase/supabase-js";
 export function createSupabaseServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } },
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // G4: guard instead of a non-null assertion, so a missing key fails loudly
+  // and clearly rather than silently constructing a client with `undefined`.
+  if (!url || !key) {
+    throw new Error(
+      "createSupabaseServiceClient: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.",
+    );
+  }
+  return createClient(url, key, { auth: { persistSession: false } });
 }

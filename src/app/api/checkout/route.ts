@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { z } from "zod";
 import { getStripe } from "@/lib/stripe";
 import { checkRateLimit, tooManyRequests } from "@/lib/ratelimit";
 import { captureException } from "@/lib/observability";
+
+const bodySchema = z.object({ package_id: z.string().uuid() });
 
 export async function POST(req: Request) {
   const supabase = await createSupabaseServerClient();
@@ -20,10 +23,17 @@ export async function POST(req: Request) {
   const rl = await checkRateLimit(`checkout:${user.id}`, 5, 3600);
   if (!rl.allowed) return tooManyRequests();
 
-  const { package_id } = await req.json();
-  if (!package_id) {
+  let raw: unknown;
+  try {
+    raw = await req.json();
+  } catch {
+    return NextResponse.json({ error: "bad request" }, { status: 400 });
+  }
+  const parsed = bodySchema.safeParse(raw);
+  if (!parsed.success) {
     return NextResponse.json({ error: "missing package_id" }, { status: 400 });
   }
+  const { package_id } = parsed.data;
 
   const { data: pkg, error: pkgErr } = await supabase
     .from("packages")

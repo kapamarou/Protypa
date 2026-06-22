@@ -3,11 +3,18 @@ import {
   createSupabaseServerClient,
   createSupabaseServiceClient,
 } from "@/lib/supabase/server";
+import { z } from "zod";
 import { hasAccessToPaper } from "@/lib/entitlements";
 import { scoreAnswers } from "@/lib/grading";
 import { checkRateLimit, tooManyRequests } from "@/lib/ratelimit";
 import { captureException } from "@/lib/observability";
 import type { Question } from "@/lib/types";
+
+const bodySchema = z.object({
+  paper_id: z.string().uuid(),
+  student_name: z.string().max(100).nullish(),
+  answers: z.record(z.string(), z.string()),
+});
 
 export async function POST(req: Request) {
   const supabase = await createSupabaseServerClient();
@@ -25,10 +32,17 @@ export async function POST(req: Request) {
   const rl = await checkRateLimit(`grade:${user.id}`, 60, 600);
   if (!rl.allowed) return tooManyRequests();
 
-  const { paper_id, student_name, answers } = await req.json();
-  if (!paper_id || typeof answers !== "object" || answers === null) {
+  let raw: unknown;
+  try {
+    raw = await req.json();
+  } catch {
     return NextResponse.json({ error: "bad request" }, { status: 400 });
   }
+  const parsed = bodySchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "bad request" }, { status: 400 });
+  }
+  const { paper_id, student_name, answers } = parsed.data;
 
   const allowed = await hasAccessToPaper(user.id, paper_id);
   if (!allowed) {
