@@ -12,7 +12,8 @@ export default async function AdminSchoolsPage() {
       created_at, terms_accepted_at,
       profiles(full_name, onboarding_complete)
     `)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(2000); // F4: bound the query; add cursor UI if schools exceed this.
 
   return (
     <div className="space-y-6">

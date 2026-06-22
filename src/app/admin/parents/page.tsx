@@ -24,14 +24,21 @@ export default async function AdminParentsPage() {
       purchases(expires_at, packages(name_el, package_type))
     `)
     .eq("account_type", "parent")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(2000); // F4: bound the query; add cursor UI if parents exceed this.
 
   // Fetch emails via service role (auth.users is not accessible otherwise).
-  let emailMap: Record<string, string> = {};
+  const emailMap: Record<string, string> = {};
   if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
     const admin = createSupabaseServiceClient();
-    const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 });
-    for (const u of users ?? []) emailMap[u.id] = u.email ?? "";
+    // F4: listUsers caps at perPage (max 1000). Loop until a short page so
+    // emails past the 1000th user actually appear (was silently truncated).
+    for (let page = 1; page <= 100; page++) {
+      const { data, error } = await admin.auth.admin.listUsers({ perPage: 1000, page });
+      const users = data?.users ?? [];
+      for (const u of users) emailMap[u.id] = u.email ?? "";
+      if (error || users.length < 1000) break;
+    }
   }
 
   const rows = (parents as unknown as ParentRow[]) ?? [];

@@ -17,6 +17,10 @@ function sanitizeName(raw: string): string {
     .replace(/\b(ignore|system|instruction|override|forget|disregard|jailbreak)\b/gi, "***")
 }
 
+// The OpenAI generation (~2000 tokens) can take 15-40s — raise the function
+// ceiling so a slow completion isn't killed mid-flight (F3).
+export const maxDuration = 60;
+
 const TARGET_SCORE = 75;
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {

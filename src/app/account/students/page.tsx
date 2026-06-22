@@ -66,7 +66,7 @@ export default function StudentsPage() {
     setIsParent(profile?.account_type === "parent");
     setExpansionPkgId(expPkg?.id ?? null);
 
-    const { data } = await supabase.from("students").select("*").eq("school_id", user.id).order("last_name");
+    const { data } = await supabase.from("students").select("*").eq("school_id", user.id).order("last_name").limit(2000);
     setStudents((data as Student[]) ?? []);
     setLoading(false);
   }, []);

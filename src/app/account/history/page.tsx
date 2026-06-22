@@ -15,7 +15,8 @@ export default async function HistoryPage() {
     .from("grading_sessions")
     .select("*, exam_papers(title_el)")
     .eq("user_id", user!.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(200); // F4: cap history rows.
 
   const sessions =
     (data as (GradingSession & { exam_papers: Pick<ExamPaper, "title_el"> })[] | null) ?? [];
