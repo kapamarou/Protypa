@@ -7,6 +7,7 @@ import {
 import { getActivePackages } from "@/lib/entitlements";
 import { applyWatermark } from "@/lib/pdf/watermark";
 import { captureException } from "@/lib/observability";
+import { checkRateLimit, tooManyRequests } from "@/lib/ratelimit";
 import type { ExamPaperKind } from "@/lib/types";
 
 // Watermark generation can take a few seconds on a cold cache; give it headroom.
@@ -64,6 +65,11 @@ export async function GET(
   if (!user) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
+
+  // Throttle this expensive endpoint (PDF download + cold-cache watermarking)
+  // so a single account can't hammer it with kind/paper permutations.
+  const rl = await checkRateLimit(`exam-paper:${user.id}`, 120, 3600);
+  if (!rl.allowed) return tooManyRequests();
 
   // 2. Load the simulation row (always select all paper columns; pick the
   //    right one below based on `kind`).

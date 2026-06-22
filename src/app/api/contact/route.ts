@@ -39,6 +39,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Ένα ή περισσότερα πεδία υπερβαίνουν το επιτρεπτό μέγεθος." }, { status: 400 });
   }
 
+  // Validate the reply-to email shape and reject header-injection chars (CRLF).
+  if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email) || /[\r\n]/.test(email)) {
+    return NextResponse.json({ error: "Μη έγκυρη διεύθυνση email." }, { status: 400 });
+  }
+
   // Escape all user-supplied strings before interpolating into HTML to prevent
   // injection attacks via email clients that render HTML.
   const safeName    = escHtml(name);

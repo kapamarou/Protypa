@@ -49,7 +49,10 @@ async function provision(session: Stripe.Checkout.Session): Promise<Outcome> {
   } catch (e) {
     return { status: "retry", error: `listLineItems: ${(e as Error).message}` };
   }
-  if (pkg.stripe_price_id && chargedPriceId && chargedPriceId !== pkg.stripe_price_id) {
+  // If the package has a price, the charged price MUST match. A missing/empty
+  // line item (chargedPriceId === null) is treated as a failure to verify, not
+  // a pass — otherwise an empty listLineItems response would skip the check.
+  if (pkg.stripe_price_id && chargedPriceId !== pkg.stripe_price_id) {
     return {
       status: "reject",
       error: `price mismatch: charged ${chargedPriceId} != package ${pkg.stripe_price_id}`,

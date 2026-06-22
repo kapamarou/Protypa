@@ -23,7 +23,10 @@ function completed(paymentStatus: string, type = 'checkout.session.completed') {
   }
 }
 
-function makeStripe(event: unknown, opts: { throwSig?: boolean; lineItemPrice?: string } = {}) {
+function makeStripe(
+  event: unknown,
+  opts: { throwSig?: boolean; lineItemPrice?: string; emptyLineItems?: boolean } = {},
+) {
   return {
     webhooks: {
       constructEvent: jest.fn(() => {
@@ -34,7 +37,7 @@ function makeStripe(event: unknown, opts: { throwSig?: boolean; lineItemPrice?: 
     checkout: {
       sessions: {
         listLineItems: jest.fn().mockResolvedValue({
-          data: [{ price: { id: opts.lineItemPrice ?? 'price_pkg' } }],
+          data: opts.emptyLineItems ? [] : [{ price: { id: opts.lineItemPrice ?? 'price_pkg' } }],
         }),
       },
     },
@@ -131,6 +134,17 @@ describe('POST /api/webhook', () => {
   it('B5: rejects (no provision) when the charged price != package price', async () => {
     jest.mocked(getStripe).mockReturnValue(
       makeStripe(completed('paid'), { lineItemPrice: 'price_other' }) as never,
+    )
+    const admin = makeAdmin()
+    jest.mocked(createSupabaseServiceClient).mockReturnValue(admin as never)
+    const res = await POST(req())
+    expect(res.status).toBe(200)
+    expect(admin._upsert).not.toHaveBeenCalled()
+  })
+
+  it('B5: rejects when the price cannot be verified (empty line items)', async () => {
+    jest.mocked(getStripe).mockReturnValue(
+      makeStripe(completed('paid'), { emptyLineItems: true }) as never,
     )
     const admin = makeAdmin()
     jest.mocked(createSupabaseServiceClient).mockReturnValue(admin as never)
