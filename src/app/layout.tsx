@@ -78,6 +78,11 @@ export default function RootLayout({
   return (
     <html
       lang="el"
+      // Browser extensions (Google Translate, dark-mode, Grammarly) rewrite the
+      // <html> element before React hydrates — e.g. flipping lang="el" to "en" —
+      // which logs a hydration mismatch. This flag is SHALLOW: it silences only
+      // mismatches on <html>'s own attributes, NOT real hydration bugs in the page.
+      suppressHydrationWarning
       className={`${notoSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
