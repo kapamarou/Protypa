@@ -2,30 +2,29 @@ import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/s
 
 export const dynamic = "force-dynamic";
 
-interface ParentRow {
-  id: string;
-  full_name: string | null;
-  created_at: string;
-  onboarding_complete: boolean;
-  purchases: {
-    expires_at: string;
-    packages: { name_el: string; package_type: string } | null;
-  }[];
-}
-
 export default async function AdminParentsPage() {
   const supabase = await createSupabaseServerClient();
   if (!supabase) return null;
 
   const { data: parents, error } = await supabase
     .from("profiles")
-    .select(`
-      id, full_name, created_at, onboarding_complete,
-      purchases(expires_at, packages(name_el, package_type))
-    `)
+    .select("id, full_name, created_at, onboarding_complete")
     .eq("account_type", "parent")
     .order("created_at", { ascending: false })
     .limit(2000); // F4: bound the query; add cursor UI if parents exceed this.
+
+  // Fetch purchases + packages separately — avoids PostgREST implicit-FK join.
+  type PurchaseRow = { user_id: string; expires_at: string; packages: { name_el: string; package_type: string } | null };
+  let purchaseMap: Record<string, PurchaseRow[]> = {};
+  if (parents && parents.length > 0) {
+    const { data: purchases } = await supabase
+      .from("purchases")
+      .select("user_id, expires_at, packages(name_el, package_type)")
+      .in("user_id", parents.map((p) => p.id));
+    for (const pu of (purchases ?? []) as unknown as PurchaseRow[]) {
+      (purchaseMap[pu.user_id] ??= []).push(pu);
+    }
+  }
 
   // Fetch emails via service role (auth.users is not accessible otherwise).
   const emailMap: Record<string, string> = {};
@@ -34,14 +33,14 @@ export default async function AdminParentsPage() {
     // F4: listUsers caps at perPage (max 1000). Loop until a short page so
     // emails past the 1000th user actually appear (was silently truncated).
     for (let page = 1; page <= 100; page++) {
-      const { data, error } = await admin.auth.admin.listUsers({ perPage: 1000, page });
+      const { data, error: listErr } = await admin.auth.admin.listUsers({ perPage: 1000, page });
       const users = data?.users ?? [];
       for (const u of users) emailMap[u.id] = u.email ?? "";
-      if (error || users.length < 1000) break;
+      if (listErr || users.length < 1000) break;
     }
   }
 
-  const rows = (parents as unknown as ParentRow[]) ?? [];
+  const rows = parents ?? [];
   const now = new Date().toISOString();
 
   return (
@@ -75,9 +74,9 @@ export default async function AdminParentsPage() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {rows.map((p, i) => {
-                const activePurchases = p.purchases?.filter(
+                const activePurchases = (purchaseMap[p.id] ?? []).filter(
                   (pu) => pu.packages?.package_type === "parent" && pu.expires_at > now
-                ) ?? [];
+                );
                 const activePkg = activePurchases[0] ?? null;
 
                 return (
