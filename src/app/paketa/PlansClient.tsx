@@ -90,7 +90,7 @@ function ParentCard({
 
   return (
     <article
-      className={`relative flex flex-col rounded-3xl bg-[#7c00d0] text-white p-7 md:p-9 overflow-hidden transition-opacity ${
+      className={`relative flex flex-col rounded-3xl bg-[#7c00d0] text-white p-7 md:p-9 overflow-hidden min-w-0 transition-opacity ${
         disabled ? "opacity-50" : ""
       }`}
     >
@@ -157,7 +157,7 @@ function SchoolCard({
 
   return (
     <article
-      className={`relative flex flex-col rounded-3xl bg-[#056ef5] text-white p-7 md:p-9 overflow-hidden transition-opacity ${
+      className={`relative flex flex-col rounded-3xl bg-[#056ef5] text-white p-7 md:p-9 overflow-hidden min-w-0 transition-opacity ${
         disabled ? "opacity-50" : ""
       }`}
     >
@@ -192,23 +192,20 @@ function SchoolCard({
           <div className="text-[10px] font-bold tracking-[0.2em] uppercase opacity-70 mb-3">
             Αριθμός μαθητών
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-3">
             {tiers.map((t, i) => (
               <button
                 key={t.id}
                 type="button"
                 onClick={() => onSelect(i)}
-                className={`relative px-3 py-2.5 rounded-lg text-xs font-bold tabular-nums transition-all cursor-pointer ${
+                className={`px-2 py-2 rounded-lg text-xs font-bold tabular-nums transition-all cursor-pointer leading-tight ${
                   selectedIdx === i
                     ? "bg-white !text-[#056ef5] shadow-md"
                     : "bg-white/10 text-white/85 hover:bg-white/20"
                 }`}
               >
                 {t.min_students}–{t.max_students}
-                {/* Expansion available badge */}
-                <span className="absolute -top-1.5 -right-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full bg-[#c8ff00] text-ink text-[8px] font-black leading-none">
-                  +επέκταση
-                </span>
+                <span className="block text-[7px] font-black opacity-70 mt-0.5">+επέκταση</span>
               </button>
             ))}
           </div>

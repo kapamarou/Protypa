@@ -52,13 +52,13 @@ export function BuyButton({
             <div className="flex flex-col gap-2">
               <Link
                 href="/signup"
-                className="w-full inline-flex items-center justify-center px-5 py-3 rounded-full bg-[#056ef5] text-white font-black text-sm uppercase tracking-wider hover:bg-[#0451b8] transition-colors"
+                className="w-full inline-flex items-center justify-center min-h-[44px] px-5 rounded-full bg-[#056ef5] text-white font-black text-sm uppercase tracking-wider hover:bg-[#0451b8] transition-colors"
               >
                 Δημιουργία λογαριασμού
               </Link>
               <Link
                 href={`/signin?next=/paketa`}
-                className="w-full inline-flex items-center justify-center px-5 py-3 rounded-full border-2 border-ink/20 text-ink font-bold text-sm hover:border-ink/40 transition-colors"
+                className="w-full inline-flex items-center justify-center min-h-[44px] px-5 rounded-full border-2 border-ink/20 text-ink font-bold text-sm hover:border-ink/40 transition-colors"
               >
                 Σύνδεση
               </Link>

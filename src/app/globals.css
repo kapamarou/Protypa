@@ -164,3 +164,37 @@ h1, h2, h3, h4, p, span, li, td, th {
     padding: 40px;
   }
 }
+
+/*
+ * Container-query responsive nav — supplements Tailwind's viewport breakpoints.
+ * Some environments (e.g. browser-extension window resize) change the outer
+ * window size without updating the CSS viewport, so media-query breakpoints fire
+ * as "desktop" even when the element is narrow. Container queries respond to the
+ * element's own rendered width and always fire correctly.
+ */
+
+/* Site header */
+.site-header-desktop-nav   { display: none; }
+.site-header-mobile-toggle { display: block; }
+
+@container site-header (width < 768px) {
+  .site-header-desktop-nav   { display: none !important; }
+  .site-header-mobile-toggle { display: block !important; }
+}
+@container site-header (width >= 768px) {
+  .site-header-desktop-nav   { display: flex !important; align-items: center; }
+  .site-header-mobile-toggle { display: none !important; }
+}
+
+/* Admin layout */
+.admin-sidebar-desktop { }
+.admin-mobile-bar      { display: block; }
+
+@container admin-layout (width < 768px) {
+  .admin-sidebar-desktop { display: none !important; }
+  .admin-mobile-bar      { display: block !important; }
+}
+@container admin-layout (width >= 768px) {
+  .admin-sidebar-desktop { display: flex !important; flex-direction: column; }
+  .admin-mobile-bar      { display: none !important; }
+}

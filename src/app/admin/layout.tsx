@@ -36,9 +36,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!profile?.is_admin) redirect("/account");
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex">
+    <div
+      className="min-h-screen bg-[#0a0a0f] flex"
+      style={{ containerType: "inline-size", containerName: "admin-layout" }}
+    >
       {/* Desktop sidebar — md and up */}
-      <aside className="hidden md:flex md:flex-col w-56 lg:w-60 shrink-0 border-r border-white/10 sticky top-0 h-screen">
+      <aside className="hidden md:flex md:flex-col w-56 lg:w-60 shrink-0 border-r border-white/10 sticky top-0 h-screen admin-sidebar-desktop">
         <Link
           href="/admin"
           className="flex items-center gap-2 px-6 py-5 border-b border-white/10"
