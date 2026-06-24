@@ -145,7 +145,7 @@ function AuthField({ label, value, onChange, type = "text" }: {
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-2 w-full bg-transparent border-0 border-b-2 border-ink/20 px-0 py-3 text-lg font-display text-ink placeholder:text-ink/30 focus:outline-none focus:border-[#056ef5] transition-colors"
+        className="mt-2 w-full bg-transparent border-0 border-b-2 border-ink/20 px-0 py-3 text-lg font-sans text-ink placeholder:text-ink/30 focus:outline-none focus:border-[#056ef5] transition-colors"
       />
     </label>
   );

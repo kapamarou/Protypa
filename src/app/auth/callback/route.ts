@@ -5,7 +5,11 @@ import { NextResponse, type NextRequest } from "next/server";
 // Handles both email-confirmation links and password-reset links.
 // Supabase sends: GET /auth/callback?code=<pkce-code>&next=<destination>
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams, origin: requestOrigin } = new URL(request.url);
+  // On Netlify, request.url carries the internal .netlify.app origin even on
+  // custom-domain traffic. Use NEXT_PUBLIC_SITE_URL so redirects always land
+  // on the canonical domain (protupa.gr) rather than the deploy preview URL.
+  const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? requestOrigin).replace(/\/$/, "");
   const code  = searchParams.get("code");
   const type  = searchParams.get("type");
   const nextParam = searchParams.get("next");
