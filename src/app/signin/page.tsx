@@ -16,6 +16,9 @@ function SignInForm() {
     params.get("error") === "auth" ? "Ο σύνδεσμος επιβεβαίωσης έληξε. Δοκιμάστε ξανά." : null
   );
   const [loading, setLoading] = useState(false);
+  const [unverified, setUnverified] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendDone, setResendDone] = useState(false);
 
   return (
     <form
@@ -26,7 +29,15 @@ function SignInForm() {
         setLoading(true);
         const supabase = createSupabaseBrowserClient();
         const { data: { user }, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) { setError(error.message); setLoading(false); return; }
+        if (error) {
+          if (error.code === "email_not_confirmed" || error.message?.toLowerCase().includes("email not confirmed")) {
+            setUnverified(true);
+          } else {
+            setError(error.message);
+          }
+          setLoading(false);
+          return;
+        }
 
         // Route admins to /admin, customers to /account.
         // If a specific ?next= URL was passed (e.g. deep link), honour it.
@@ -45,6 +56,25 @@ function SignInForm() {
       <AuthField label={el.auth.password} type="password" value={password} onChange={setPassword} />
       {error && (
         <div className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-xl">{error}</div>
+      )}
+      {unverified && (
+        <div className="text-sm bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-3">
+          <p className="text-amber-900 font-medium">Το email σας δεν έχει επιβεβαιωθεί ακόμα.</p>
+          <button
+            type="button"
+            disabled={resending || resendDone}
+            onClick={async () => {
+              setResending(true);
+              const supabase = createSupabaseBrowserClient();
+              await supabase.auth.resend({ type: "signup", email });
+              setResending(false);
+              setResendDone(true);
+            }}
+            className="w-full px-4 py-2 rounded-full bg-[#7c00d0] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#6a00b3] transition-colors disabled:opacity-50 cursor-pointer"
+          >
+            {resending ? "Αποστολή…" : resendDone ? "Εστάλη ✓ — ελέγξτε το inbox σας" : "Αποστολή νέου συνδέσμου επιβεβαίωσης"}
+          </button>
+        </div>
       )}
       <div className="text-right -mt-4">
         <Link href="/forgot-password" className="text-xs text-ink/40 hover:text-[#056ef5] transition-colors">

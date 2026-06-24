@@ -55,8 +55,10 @@ export default function SignUpPage() {
   const [showPw, setShowPw] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendDone, setResendDone] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   const strength = scorePassword(password);
@@ -103,8 +105,17 @@ export default function SignUpPage() {
       router.push("/onboarding");
       router.refresh();
     } else {
-      setInfo(el.auth.checkEmail);
+      setSent(true);
     }
+  }
+
+  async function handleResend() {
+    setResending(true);
+    setResendDone(false);
+    const supabase = createSupabaseBrowserClient();
+    await supabase.auth.resend({ type: "signup", email });
+    setResending(false);
+    setResendDone(true);
   }
 
   return (
@@ -129,6 +140,33 @@ export default function SignUpPage() {
       {/* Right form panel */}
       <div className="flex items-center justify-center px-6 py-10 bg-white">
         <div className="w-full max-w-sm">
+
+          {sent ? (
+            <div>
+              <div className="font-display text-6xl text-[#7c00d0]">✓</div>
+              <h1 className="mt-4 font-display text-3xl text-ink">Ελέγξτε το email σας</h1>
+              <p className="mt-3 text-ink/50 text-sm leading-relaxed max-w-xs">
+                Σας στείλαμε σύνδεσμο επιβεβαίωσης στο <strong className="text-ink/80">{email}</strong>. Ελέγξτε και τον φάκελο spam αν δεν το βλέπετε.
+              </p>
+              <div className="mt-6 flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resending || resendDone}
+                  className="w-full px-6 py-3 rounded-full bg-[#FDFFFC] text-[#7c00d0] border-2 border-[#7c00d0] font-black uppercase tracking-wider text-xs hover:bg-[#7c00d0]/5 hover:-translate-y-0.5 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {resending ? "Αποστολή…" : resendDone ? "Εστάλη ξανά ✓" : "Αποστολή ξανά"}
+                </button>
+                <Link
+                  href="/signin"
+                  className="text-center text-xs text-ink/45 hover:text-ink/70 transition-colors"
+                >
+                  ← Επιστροφή στη σύνδεση
+                </Link>
+              </div>
+            </div>
+          ) : (
+          <>
           <div className="mb-8">
             <div className="text-[10px] font-bold tracking-[0.25em] uppercase text-ink/40 mb-2">Εγγραφή</div>
             <h1 className="font-display text-3xl md:text-4xl text-ink">{el.auth.signupTitle}</h1>
@@ -246,9 +284,6 @@ export default function SignUpPage() {
             {error && (
               <div className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-xl">{error}</div>
             )}
-            {info && (
-              <div className="text-sm text-green-700 bg-green-50 border border-green-200 p-3 rounded-xl">{info}</div>
-            )}
 
             {/* Terms acceptance */}
             <label className="flex items-start gap-3 cursor-pointer group">
@@ -291,6 +326,8 @@ export default function SignUpPage() {
               {el.auth.signinLink}
             </Link>
           </p>
+          </>
+          )}
         </div>
       </div>
     </div>
