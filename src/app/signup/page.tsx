@@ -175,7 +175,7 @@ export default function SignUpPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="new-password"
-                    className="mt-2 w-full bg-transparent border-0 border-b-2 border-ink/20 px-0 pr-8 py-3 text-base font-display text-ink placeholder:text-ink/30 focus:outline-none focus:border-[#7c00d0] transition-colors"
+                    className="mt-2 w-full bg-transparent border-0 border-b-2 border-ink/20 px-0 pr-8 py-3 text-base font-sans text-ink placeholder:text-ink/30 focus:outline-none focus:border-[#7c00d0] transition-colors"
                   />
                   <button
                     type="button"
@@ -224,7 +224,7 @@ export default function SignUpPage() {
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
                     autoComplete="new-password"
-                    className={`mt-2 w-full bg-transparent border-0 border-b-2 px-0 pr-8 py-3 text-base font-display text-ink placeholder:text-ink/30 focus:outline-none transition-colors ${
+                    className={`mt-2 w-full bg-transparent border-0 border-b-2 px-0 pr-8 py-3 text-base font-sans text-ink placeholder:text-ink/30 focus:outline-none transition-colors ${
                       confirmMismatch ? "border-red-400 focus:border-red-500" : "border-ink/20 focus:border-[#7c00d0]"
                     }`}
                   />
@@ -309,7 +309,7 @@ function AuthField({ label, value, onChange, type = "text" }: {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         autoComplete={type === "email" ? "email" : type === "password" ? "new-password" : "off"}
-        className="mt-2 w-full bg-transparent border-0 border-b-2 border-ink/20 px-0 py-3 text-base font-display text-ink placeholder:text-ink/30 focus:outline-none focus:border-[#7c00d0] transition-colors"
+        className="mt-2 w-full bg-transparent border-0 border-b-2 border-ink/20 px-0 py-3 text-base font-sans text-ink placeholder:text-ink/30 focus:outline-none focus:border-[#7c00d0] transition-colors"
       />
     </label>
   );

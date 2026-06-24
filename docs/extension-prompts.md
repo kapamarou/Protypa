@@ -137,6 +137,110 @@ Report a PASS/FAIL table.
 
 ---
 
+## Prompt 10 — Student limits & paywall *(school.free, school.paid, parent.paid)*
+
+```
+Ignore any previous task. Testing Protupa at BASE — student limit and paywall enforcement. Run each sub-check, PASS/FAIL with screenshots on any FAIL.
+
+─── Phase A: No-package paywall (as school.free) ───
+Sign in: BASE/signin, email school.free@protupa.test, password PASSWORD (complete onboarding if prompted).
+A1. Visit BASE/account/students — expect a paywall/upgrade prompt (text like "Απαιτείται πακέτο" or "για τη διαχείριση μαθητών"), NOT the student list. PASS if paywall shows; FAIL if the student manager appears.
+Sign out.
+
+─── Phase B: School limit (as school.paid, 10-student package) ───
+Sign in: BASE/signin, email school.paid@protupa.test, password PASSWORD.
+B1. Visit BASE/account/students and confirm a "X/10 μαθητές" counter appears below the "Νέος μαθητής" button.
+B2. Seed students to exactly 10 via javascript_tool (copy-paste this into the tool, replacing SCHOOL_USER_ID with the logged-in user id from localStorage key "sb-*-auth-token" → user.id):
+    const lsKey = Object.keys(localStorage).find(k => k.includes('auth-token'));
+    const sess = JSON.parse(localStorage.getItem(lsKey)||'{}');
+    const uid = sess?.user?.id;
+    const scripts = Array.from(document.querySelectorAll('script')).map(s=>s.textContent||'').join('');
+    const supaUrl = (scripts.match(/https:\/\/[a-z0-9]+\.supabase\.co/)||[])[0];
+    const anonKey = (scripts.match(/eyJ[A-Za-z0-9._-]{100,}/)||[])[0];
+    const token = sess?.access_token;
+    // Count existing students first
+    const existing = await fetch(`${supaUrl}/rest/v1/students?school_id=eq.${uid}&select=id`,{headers:{'Authorization':`Bearer ${token}`,'apikey':anonKey}});
+    const count = (await existing.json()).length;
+    const toAdd = 10 - count;
+    const results = [];
+    for(let i=0;i<toAdd;i++){
+      const r=await fetch(`${supaUrl}/rest/v1/students`,{method:'POST',headers:{'Authorization':`Bearer ${token}`,'apikey':anonKey,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({school_id:uid,first_name:`Seed`,last_name:`${i+1}`,class_year:null,subjects:[]})});
+      results.push(r.status);
+    }
+    return {uid,supaUrl:supaUrl?.slice(0,30),toAdd,statuses:results};
+    Reload the page and confirm the counter shows 10/10 μαθητές.
+B3. Click "+ Νέος μαθητής", fill in first name "Τεστ" and last name "ΌριοΥπέρβαση", and submit. Expect the limit modal to appear containing:
+    • A heading with "Φτάσατε το όριο των 10 μαθητών"
+    • A button/link "Αναβάθμιση πακέτου →"
+    • A button "+ Επέκταση 5 μαθητών"
+    PASS only if all three elements are present; FAIL if student is saved or any element is missing.
+B4. Close the modal. Security bypass test — still at 10/10, use javascript_tool to call the Supabase REST API directly without going through the UI, inserting an 11th student:
+    const lsKey = Object.keys(localStorage).find(k => k.includes('auth-token'));
+    const sess = JSON.parse(localStorage.getItem(lsKey)||'{}');
+    const uid = sess?.user?.id;
+    const token = sess?.access_token;
+    const scripts = Array.from(document.querySelectorAll('script')).map(s=>s.textContent||'').join('');
+    const supaUrl = (scripts.match(/https:\/\/[a-z0-9]+\.supabase\.co/)||[])[0];
+    const anonKey = (scripts.match(/eyJ[A-Za-z0-9._-]{100,}/)||[])[0];
+    const res = await fetch(`${supaUrl}/rest/v1/students`,{method:'POST',headers:{'Authorization':`Bearer ${token}`,'apikey':anonKey,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({school_id:uid,first_name:'Security',last_name:'Bypass',class_year:null,subjects:[]})});
+    return {status:res.status,body:await res.text()};
+    EXPECTED RESULT: HTTP 201 = FAIL (known security gap — no server-side limit; the UI-only check was bypassed). HTTP 400/403 = PASS (server correctly blocks it). Report which you got.
+Sign out.
+
+─── Phase C: Parent limit (as natasaathens2002.com@gmail.com, 1-student package) ───
+Sign in: BASE/signin, email natasaathens2002.com@gmail.com, password PASSWORD.
+C1. Visit BASE/account/students — confirm a "X/1 μαθητές" counter is visible.
+C2. If counter shows 0/1, click "+ Νέος μαθητής", enter first name "Τεστ" last name "Παιδί", submit. Confirm student saved and counter becomes 1/1.
+C3. Click "+ Νέος μαθητής" again, fill in a different name, and submit. Expect the limit modal containing:
+    • A heading "Φτάσατε το όριο των 1 μαθητή"
+    • Text "Το πακέτο γονέα επιτρέπει έως 1 παιδί. Για περισσότερα παιδιά επικοινωνήστε μαζί μας."
+    • NO "Αναβάθμιση πακέτου" link/button
+    • NO "+ Επέκταση 5 μαθητών" button
+    PASS only if modal shows with the "contact us" text AND without upgrade/expansion options.
+Sign out.
+
+Report a PASS/FAIL table. B4 is expected to FAIL (documented security gap).
+```
+
+---
+
+## Prompt 12 — Stripe payment flow  *(cheddarthecorgi99@gmail.com — no package)*
+
+**Before you start:**
+- Open a terminal and run: `stripe listen --forward-to localhost:3000/api/webhook`
+  It will print a `whsec_...` secret — make sure it is set as `STRIPE_WEBHOOK_SECRET` in `.env.local` and the dev server is restarted.
+- `STRIPE_SECRET_KEY` must be a test key (`sk_test_...`).
+- Every package in the DB must have a `stripe_price_id` pointing to a test-mode Stripe price.
+- Test card: **4242 4242 4242 4242** · expiry **12/29** · CVC **123** · postcode **10001**.
+
+```
+Ignore any previous task. Testing Protupa payments at BASE. Run each check, PASS/FAIL with screenshots on any FAIL.
+
+─── Phase A: Packages page (logged OUT) ───
+A1. Visit BASE/paketa — confirm at least one package is displayed with a price and a buy button.
+A2. Click a buy button while logged out — expect a redirect to /signin (you should NOT be taken to Stripe). PASS if you land on /signin; FAIL if Stripe checkout opens.
+
+─── Phase B: Happy-path purchase (as cheddarthecorgi99@gmail.com) ───
+Sign in: BASE/signin, email cheddarthecorgi99@gmail.com, password PASSWORD.
+B1. Visit BASE/account/students — expect the paywall ("Απαιτείται πακέτο"), NOT the student list.
+B2. Visit BASE/paketa and click the buy button for the school package (e.g. "school-tier-1"). Expect to be redirected to a stripe.com checkout URL. PASS if the URL starts with https://checkout.stripe.com; FAIL if you get an error or stay on the site.
+B3. On the Stripe checkout page, fill in the test card: number 4242 4242 4242 4242, expiry 12/29, CVC 123, postcode 10001, any name. Submit the payment. Expect a redirect back to BASE/account?purchase=success. PASS if you land there; FAIL if Stripe shows an error or redirect goes elsewhere.
+B4. After landing on /account?purchase=success, wait 5 seconds, then visit BASE/account/students — expect the student manager to appear (NO paywall). PASS if the list loads; FAIL if the paywall is still shown (means the webhook did not deliver).
+B5. Verify the success_url and cancel_url use the BASE origin (not a third-party domain): on the Stripe checkout page (step B3), before submitting, check the URL bar — it must be checkout.stripe.com and the page text must show "protupa.gr" as the merchant. PASS if protupa.gr is shown; FAIL if another domain appears.
+
+─── Phase C: API security (still signed in as cheddarthecorgi99@gmail.com) ───
+C1. POST to BASE/api/checkout with body {"package_id":"00000000-0000-0000-0000-000000000000"} — expect HTTP 404 {"error":"package not found"}.
+C2. Sign out, then POST to BASE/api/checkout with any body — expect HTTP 401 {"error":"unauthenticated"}.
+
+─── Phase D: Refund → access revoked ───
+D1. Go to the Stripe Dashboard (dashboard.stripe.com) → Payments → find the test payment just made → click "Refund" → refund the full amount → confirm. Tell me when done.
+D2. Wait 10 seconds (for webhook delivery), then reload BASE/account/students as cheddarthecorgi99@gmail.com — expect the paywall to reappear. PASS if paywall shows; FAIL if the student list is still accessible.
+
+Report a PASS/FAIL table. B4 FAIL means the webhook is not forwarding — check that `stripe listen` is running and STRIPE_WEBHOOK_SECRET matches its output.
+```
+
+---
+
 ## Scorecard (fill as you go)
 
 | Prompt | Suite | Result | Notes |
@@ -150,3 +254,5 @@ Report a PASS/FAIL table.
 | 7 | IDOR / access control | | |
 | 8 | Rate limits + validation | | |
 | 9 | Responsive / a11y | | |
+| 10 | Student limits & paywall | PASS | B4 N/A — anon key not in client bundles; REST call returns 401 without it |
+| 12 | Stripe payment flow | | D2 FAIL = webhook not forwarding |

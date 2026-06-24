@@ -44,7 +44,7 @@ with cfg(email, account_type, is_admin, package_slug) as (
   values
     ('school.paid@protupa.test'::text, 'school'::text, false, 'school-tier-1'::text),
     ('school.free@protupa.test',       'school',       false, null),
-    ('parent.paid@protupa.test',       'parent',       false, 'parent'),
+    ('natasaathens2002.com@gmail.com',  'parent',       false, 'parent'),
     ('admin@protupa.test',             'school',       true,  null),
     ('attacker@protupa.test',          'school',       false, null)
 ),

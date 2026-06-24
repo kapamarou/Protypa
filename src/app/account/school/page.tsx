@@ -41,7 +41,7 @@ const getNationalStats = unstable_cache(
     ]);
     return { question: (q as QuestionStat[]) ?? [], category: (c as CategoryStat[]) ?? [] };
   },
-  ["national-stats-v1"],
+  ["national-stats-v2"],
   { revalidate: 600 },
 );
 

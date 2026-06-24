@@ -62,20 +62,27 @@ export async function POST(req: Request) {
   // Use a server-controlled base URL — never trust the Origin header from the
   // client, which can be spoofed to redirect users to an attacker-controlled site.
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://protupa.gr").replace(/\/$/, "");
-  const stripe = getStripe();
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    locale: "el",
-    customer_email: user.email,
-    line_items: [{ price: pkg.stripe_price_id, quantity: 1 }],
-    success_url: `${siteUrl}/account?purchase=success`,
-    cancel_url: `${siteUrl}/paketa`,
-    metadata: {
-      user_id: user.id,
-      package_id: pkg.id,
-      duration_days: String(pkg.duration_days),
-    },
-  });
+  let session: Awaited<ReturnType<ReturnType<typeof getStripe>["checkout"]["sessions"]["create"]>>;
+  try {
+    const stripe = getStripe();
+    session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      locale: "el",
+      customer_email: user.email,
+      line_items: [{ price: pkg.stripe_price_id, quantity: 1 }],
+      success_url: `${siteUrl}/account?purchase=success`,
+      cancel_url: `${siteUrl}/paketa`,
+      metadata: {
+        user_id: user.id,
+        package_id: pkg.id,
+        duration_days: String(pkg.duration_days),
+      },
+    });
+  } catch (e) {
+    captureException(e, { route: "api/checkout", extra: { stage: "stripe-session-create" } });
+    const msg = e instanceof Error ? e.message : "unknown error";
+    return NextResponse.json({ error: `Stripe error: ${msg}` }, { status: 500 });
+  }
 
   return NextResponse.json({ url: session.url });
 }
