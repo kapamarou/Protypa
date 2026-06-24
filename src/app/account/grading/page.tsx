@@ -94,6 +94,7 @@ function GradingView({ sims, participationMap, now, isPreview = false, hasAccess
       {(yliGreekVisible || yliMathVisible || yliApodesmeusiVisible) && (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {yliGreekVisible && (
+            // eslint-disable-next-line @next/next/no-html-link-for-pages -- API download endpoint, not a page route
             <a
               href="/api/yli/greek"
               className="group flex items-center gap-4 px-5 py-4 rounded-2xl bg-[#7c00d0] hover:bg-[#6500b0] transition-colors !text-white"
@@ -118,6 +119,7 @@ function GradingView({ sims, participationMap, now, isPreview = false, hasAccess
           )}
 
           {yliMathVisible && (
+            // eslint-disable-next-line @next/next/no-html-link-for-pages -- API download endpoint, not a page route
             <a
               href="/api/yli/math"
               className="group flex items-center gap-4 px-5 py-4 rounded-2xl bg-[#056ef5] hover:bg-[#0451b8] transition-colors !text-white"
@@ -142,6 +144,7 @@ function GradingView({ sims, participationMap, now, isPreview = false, hasAccess
           )}
 
           {yliApodesmeusiVisible && (
+            // eslint-disable-next-line @next/next/no-html-link-for-pages -- API download endpoint, not a page route
             <a
               href="/api/yli/apodesmeusi"
               className="group flex items-center gap-4 px-5 py-4 rounded-2xl bg-[#059669] hover:bg-[#047857] transition-colors !text-white"

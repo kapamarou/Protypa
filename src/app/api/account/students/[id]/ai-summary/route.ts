@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { checkRateLimit, tooManyRequests } from "@/lib/ratelimit";
+import { getActivePackages } from "@/lib/entitlements";
+import { captureException } from "@/lib/observability";
 import { computeScore, gradeCountsForStats } from "@/lib/scoring";
 import type { SimulationQuestionTag, Simulation, StudentSimulationGrade, Student } from "@/lib/types";
 
@@ -15,6 +17,10 @@ function sanitizeName(raw: string): string {
     .replace(/\b(ignore|system|instruction|override|forget|disregard|jailbreak)\b/gi, "***")
 }
 
+// The OpenAI generation (~2000 tokens) can take 15-40s — raise the function
+// ceiling so a slow completion isn't killed mid-flight (F3).
+export const maxDuration = 60;
+
 const TARGET_SCORE = 75;
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -26,22 +32,38 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
 
+  // Active package required — AI summaries cost real money
+  const activePkgs = await getActivePackages(user.id);
+  if (activePkgs.length === 0) {
+    return NextResponse.json({ error: "Απαιτείται ενεργό πακέτο." }, { status: 403 });
+  }
+
   // 10 AI summaries per user per hour — each call costs real money
   const rl = await checkRateLimit(`ai-summary:${user.id}`, 10, 3600);
   if (!rl.allowed) return tooManyRequests();
 
   // Verify student belongs to this account
-  const { data: studentRow } = await supabase
+  const { data: studentRow, error: studentErr } = await supabase
     .from("students").select("*").eq("id", id).eq("school_id", user.id).maybeSingle();
+  // E2-F: a DB error must not look like "student not found" (404).
+  if (studentErr) {
+    captureException(studentErr, { route: "api/ai-summary", extra: { stage: "student" } });
+    return NextResponse.json({ error: "server error" }, { status: 500 });
+  }
   if (!studentRow) return NextResponse.json({ error: "not found" }, { status: 404 });
   const student = studentRow as Student;
 
   // Fetch grades with simulations
-  const { data: gradesRaw } = await supabase
+  const { data: gradesRaw, error: gradesErr } = await supabase
     .from("student_simulation_grades")
     .select("*, simulations(*)")
     .eq("student_id", id)
     .order("submitted_at", { ascending: true });
+  // Don't generate a misleading AI summary from a failed (empty) grades query.
+  if (gradesErr) {
+    captureException(gradesErr, { route: "api/ai-summary", extra: { stage: "grades" } });
+    return NextResponse.json({ error: "server error" }, { status: 500 });
+  }
   const grades = (gradesRaw ?? []) as (StudentSimulationGrade & { simulations: Simulation })[];
 
   const eligibleGrades = grades.filter((g) =>

@@ -29,7 +29,7 @@ export function AdminMobileNav({ items }: { items: AdminNavItem[] }) {
   return (
     <>
       {/* Mobile top bar — only shown below md breakpoint */}
-      <header className="md:hidden sticky top-0 z-30 bg-[#0a0a0f] border-b border-white/10">
+      <header className="md:hidden sticky top-0 z-30 bg-[#0a0a0f] border-b border-white/10 admin-mobile-bar">
         <div className="flex items-center justify-between px-4 h-14">
           <button
             type="button"

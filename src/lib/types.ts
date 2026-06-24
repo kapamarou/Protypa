@@ -61,13 +61,23 @@ export interface Question {
   correct_answer: string;
 }
 
+// The subset of Question that is safe to send to the browser. `correct_answer`
+// is the answer key and MUST NEVER reach a client component — scoring happens
+// server-side in /api/grade. Use this type for any client-facing question data.
+export type ClientQuestion = Pick<
+  Question,
+  "id" | "number" | "qtype" | "prompt_el" | "choices"
+>;
+
 export interface Purchase {
   id: string;
   user_id: string;
   package_id: string;
   stripe_session_id: string | null;
+  payment_intent: string | null;
   purchased_at: string;
   expires_at: string;
+  revoked_at: string | null;
 }
 
 export interface GradingSession {

@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { checkRateLimit, tooManyRequests } from "@/lib/ratelimit";
 
 export async function GET() {
   const supabase = await createSupabaseServerClient();
@@ -6,6 +7,10 @@ export async function GET() {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return new Response(JSON.stringify({ error: "unauthenticated" }), { status: 401 });
+
+  // Bound this multi-query export so it can't be used to flood the DB.
+  const rl = await checkRateLimit(`export:${user.id}`, 10, 3600);
+  if (!rl.allowed) return tooManyRequests();
 
   const [
     { data: profile },
@@ -16,7 +21,8 @@ export async function GET() {
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("schools").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("purchases").select("*, packages(name_el, package_type, price_cents)").eq("user_id", user.id),
-    supabase.from("students").select("*").eq("user_id", user.id),
+    // students are owned via school_id (not user_id) — see 0003_students.sql.
+    supabase.from("students").select("*").eq("school_id", user.id),
   ]);
 
   const exportData = {

@@ -33,8 +33,10 @@ export async function GET(request: NextRequest) {
     if (!error) {
       let destination: string;
 
-      if (nextParam) {
-        // Explicit destination wins — used by forgot-password flow.
+      if (nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")) {
+        // Explicit destination wins — used by forgot-password flow. G5: accept
+        // only same-origin absolute paths; reject "//evil.com" and absolute
+        // URLs so this can never become an open redirect.
         destination = nextParam;
       } else if (type === "recovery") {
         // Supabase password-reset links include type=recovery.

@@ -7,7 +7,7 @@ export function MobileNav() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="md:hidden">
+    <div className="md:hidden site-header-mobile-toggle">
       <button
         onClick={() => setOpen(!open)}
         className="p-2 cursor-pointer transition-opacity hover:opacity-70"

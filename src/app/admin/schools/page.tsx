@@ -5,14 +5,22 @@ export default async function AdminSchoolsPage() {
   const supabase = await createSupabaseServerClient();
   if (!supabase) return null;
 
-  const { data: schools } = await supabase
+  const { data: schools, error } = await supabase
     .from("schools")
-    .select(`
-      id, trade_name, legal_name, city, region, phone, afm, subjects,
-      created_at, terms_accepted_at,
-      profiles(full_name, onboarding_complete)
-    `)
-    .order("created_at", { ascending: false });
+    .select("id, trade_name, legal_name, city, region, phone, afm, subjects, created_at, terms_accepted_at")
+    .order("created_at", { ascending: false })
+    .limit(2000); // F4: bound the query; add cursor UI if schools exceed this.
+
+  // Fetch onboarding status separately — avoids PostgREST implicit-FK join.
+  type ProfileRow = { id: string; full_name: string | null; onboarding_complete: boolean };
+  let profileMap: Record<string, ProfileRow> = {};
+  if (schools && schools.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, onboarding_complete")
+      .in("id", schools.map((s) => s.id));
+    profileMap = Object.fromEntries((profiles ?? []).map((p) => [p.id, p as ProfileRow]));
+  }
 
   return (
     <div className="space-y-6">
@@ -22,7 +30,12 @@ export default async function AdminSchoolsPage() {
         <p className="mt-1 text-sm text-white">{schools?.length ?? 0} εγγεγραμμένα</p>
       </div>
 
-      {!schools || schools.length === 0 ? (
+      {error ? (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-12 text-center">
+          <p className="text-red-400 text-sm font-bold">Σφάλμα φόρτωσης</p>
+          <p className="text-white/55 text-xs mt-1">{error.message}</p>
+        </div>
+      ) : !schools || schools.length === 0 ? (
         <div className="rounded-2xl border border-white/10 p-12 text-center">
           <p className="text-white/80 text-sm">Δεν υπάρχουν φροντιστήρια ακόμα.</p>
         </div>
@@ -40,7 +53,7 @@ export default async function AdminSchoolsPage() {
             </thead>
             <tbody>
               {schools.map((s, i) => {
-                const profile = Array.isArray(s.profiles) ? s.profiles[0] : s.profiles as { full_name: string | null; onboarding_complete: boolean } | null;
+                const profile = profileMap[s.id] ?? null;
                 const complete = profile?.onboarding_complete ?? false;
                 return (
                   <tr key={s.id} className={`border-b border-white/5 ${i % 2 === 0 ? "bg-white/[0.015]" : ""}`}>

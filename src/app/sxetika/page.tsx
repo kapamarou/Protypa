@@ -1,5 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { el } from "@/lib/i18n/el";
+
+export const metadata: Metadata = {
+  title: "Σχετικά με εμάς",
+  description:
+    "Η ιστορία πίσω από το Protupa — φτιαγμένο από εκπαιδευτικούς για να βοηθήσει τα φροντιστήρια και τα παιδιά να ξεχωρίσουν στις εξετάσεις των Πρότυπων Σχολείων.",
+  alternates: { canonical: "/sxetika" },
+};
 
 export default function AboutPage() {
   return (

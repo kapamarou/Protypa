@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getAccountType } from "@/lib/entitlements";
+import { unstable_cache } from "next/cache";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
+import { getAccountType, getActivePackages } from "@/lib/entitlements";
+import { PaywallPrompt } from "@/components/PaywallPrompt";
 import type { Simulation } from "@/lib/types";
 
 interface QuestionStat {
@@ -25,6 +27,24 @@ interface ScoreAvg {
 
 export const dynamic = "force-dynamic";
 
+// F2: national stats are IDENTICAL for every school yet were recomputed on every
+// pageview (two full-table unnest aggregates each). Cache them per simulation for
+// 10 minutes — school-specific slices below stay live. Uses the service client
+// (national data is global, not user-scoped) so the cache key never leaks a user.
+const getNationalStats = unstable_cache(
+  async (simulationId: string): Promise<{ question: QuestionStat[]; category: CategoryStat[] }> => {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return { question: [], category: [] };
+    const admin = createSupabaseServiceClient();
+    const [{ data: q }, { data: c }] = await Promise.all([
+      admin.rpc("get_national_question_stats", { p_simulation_id: simulationId }),
+      admin.rpc("get_national_category_stats", { p_simulation_id: simulationId }),
+    ]);
+    return { question: (q as QuestionStat[]) ?? [], category: (c as CategoryStat[]) ?? [] };
+  },
+  ["national-stats-v2"],
+  { revalidate: 600 },
+);
+
 export default async function SchoolPage({
   searchParams,
 }: {
@@ -38,6 +58,10 @@ export default async function SchoolPage({
   // Parent accounts don't get school-wide stats — only schools (φροντιστήρια) do.
   const accountType = await getAccountType(user.id);
   if (accountType === "parent") redirect("/account");
+
+  // Active package required to view school-wide statistics.
+  const activePkgs = await getActivePackages(user.id);
+  if (activePkgs.length === 0) return <PaywallPrompt feature="τα στατιστικά φροντιστηρίου" />;
 
   const sp = await searchParams;
 
@@ -70,20 +94,18 @@ export default async function SchoolPage({
   if (selectedSim) {
     const [
       { data: schoolQ },
-      { data: nationalQ },
       { data: schoolC },
-      { data: nationalC },
       { data: avgs },
+      national,
     ] = await Promise.all([
-      supabase.rpc("get_school_question_stats",   { p_simulation_id: selectedSim.id, p_school_id: user.id }),
-      supabase.rpc("get_national_question_stats", { p_simulation_id: selectedSim.id }),
-      supabase.rpc("get_school_category_stats",   { p_simulation_id: selectedSim.id, p_school_id: user.id }),
-      supabase.rpc("get_national_category_stats", { p_simulation_id: selectedSim.id }),
-      supabase.rpc("get_score_averages",          { p_simulation_id: selectedSim.id, p_school_id: user.id }),
+      supabase.rpc("get_school_question_stats", { p_simulation_id: selectedSim.id, p_school_id: user.id }),
+      supabase.rpc("get_school_category_stats", { p_simulation_id: selectedSim.id, p_school_id: user.id }),
+      supabase.rpc("get_score_averages",        { p_simulation_id: selectedSim.id, p_school_id: user.id }),
+      getNationalStats(selectedSim.id), // cached across all schools
     ]);
 
-    questionStats = { school: (schoolQ as QuestionStat[]) ?? [], national: (nationalQ as QuestionStat[]) ?? [] };
-    categoryStats = { school: (schoolC as CategoryStat[]) ?? [], national: (nationalC as CategoryStat[]) ?? [] };
+    questionStats = { school: (schoolQ as QuestionStat[]) ?? [], national: national.question };
+    categoryStats = { school: (schoolC as CategoryStat[]) ?? [], national: national.category };
 
     const a = (avgs as ScoreAvg[]) ?? [];
     const schoolRow = a.find((r) => r.scope === "school");

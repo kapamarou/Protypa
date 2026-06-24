@@ -1,5 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { el } from "@/lib/i18n/el";
+
+export const metadata: Metadata = {
+  title: {
+    absolute: "Protupa · Ολοκληρωμένη προετοιμασία για τα Πρότυπα Σχολεία",
+  },
+  description:
+    "Εργαλείο διόρθωσης γραπτών για φροντιστήρια: αυτόματη βαθμολόγηση, στατιστικά ανά μαθητή και σύγκριση με άλλα φροντιστήρια για τις εξετάσεις των Πρότυπων Σχολείων.",
+  alternates: { canonical: "/" },
+};
 
 export default function HomePage() {
   return (

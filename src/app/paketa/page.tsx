@@ -1,9 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { el } from "@/lib/i18n/el";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAccountType } from "@/lib/entitlements";
 import type { AccountType, Package } from "@/lib/types";
 import { PlansClient } from "./PlansClient";
+
+export const metadata: Metadata = {
+  title: "Πακέτα εγγραφής",
+  description:
+    "Πακέτα για γονείς και φροντιστήρια: πρόσβαση στα διαγωνίσματα προσομοίωσης, αυτόματη διόρθωση και ανάλυση επίδοσης μαθητών. Ετήσια συνδρομή με δυνατότητα αναβάθμισης.",
+  alternates: { canonical: "/paketa" },
+};
 
 export const dynamic = "force-dynamic";
 

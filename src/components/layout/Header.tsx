@@ -10,7 +10,14 @@ export async function Header() {
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
 
   return (
-    <header className="sticky top-0 z-30 bg-brand border-b border-white/10">
+    // containerType="inline-size" enables container queries so the hamburger/desktop-nav
+    // toggle responds to the header's own width rather than the CSS viewport — fixes
+    // environments where window resize doesn't update the CSS viewport (some browser
+    // extensions). The Tailwind md: classes remain as a standard-browser fallback.
+    <header
+      className="sticky top-0 z-30 bg-brand border-b border-white/10"
+      style={{ containerType: "inline-size", containerName: "site-header" }}
+    >
       <div className="mx-auto max-w-7xl flex items-center justify-between px-4 sm:px-6 h-14 md:h-16">
         {/* Logo */}
         <Link href="/" className="group flex items-center">
@@ -18,7 +25,7 @@ export async function Header() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden md:flex items-center gap-1 site-header-desktop-nav">
           <NavLink href="/">{el.nav.home}</NavLink>
           <NavLink href="/paketa">{el.nav.packages}</NavLink>
           <NavLink href="/sxetika">{el.nav.about}</NavLink>
@@ -74,7 +81,7 @@ function NavLink({
   return (
     <Link
       href={href}
-      className="px-3 py-2 font-bold uppercase tracking-wider text-xs transition-opacity hover:opacity-70"
+      className="inline-flex items-center min-h-[44px] px-3 font-bold uppercase tracking-wider text-xs transition-opacity hover:opacity-70"
       style={{ color: "#ffffff" }}
     >
       {children}

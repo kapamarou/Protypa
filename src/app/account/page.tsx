@@ -42,8 +42,9 @@ export default async function AccountDashboard({
 
   const [{ data: profile }, { data: students }, { data: grades }, { data: sims }, { data: participations }, active, capacity] = await Promise.all([
     supabase.from("profiles").select("full_name, account_type").eq("id", user.id).maybeSingle(),
-    supabase.from("students").select("id, first_name, last_name, class_year, created_at").eq("school_id", user.id),
-    supabase.from("student_simulation_grades").select("*").order("submitted_at", { ascending: false }),
+    supabase.from("students").select("id, first_name, last_name, class_year, created_at").eq("school_id", user.id).limit(2000),
+    // RLS scopes these to this school's students; cap as a safety bound (F4).
+    supabase.from("student_simulation_grades").select("*").order("submitted_at", { ascending: false }).limit(5000),
     supabase.from("simulations").select("*").eq("is_published", true).order("number"),
     supabase.from("school_simulations").select("simulation_id, is_submitted").eq("school_id", user.id),
     getActivePackages(user.id),

@@ -1,7 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Post } from "@/lib/types";
+
+export const metadata: Metadata = {
+  title: "Νέα & Ανακοινώσεις",
+  description:
+    "Ενημερωθείτε για νέες δημοσιεύσεις θεμάτων, στατιστικές αναλύσεις και ανακοινώσεις του Protupa για τις εξετάσεις των Πρότυπων Σχολείων.",
+  alternates: { canonical: "/nea" },
+};
 
 const CATEGORIES = ["Όλα", "Νέα Θέματα", "Ανακοινώσεις", "Στατιστικά"] as const;
 
