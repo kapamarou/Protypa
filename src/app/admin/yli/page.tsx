@@ -16,7 +16,7 @@ type YliState = {
 const LABELS: Record<Subject, { title: string; subtitle: string; color: string; settingKey: string }> = {
   greek:       { title: "Γλώσσα",                       subtitle: "Ύλη",                            color: "#7c00d0", settingKey: "yli_greek_visible"       },
   math:        { title: "Μαθηματικά",                   subtitle: "Ύλη",                            color: "#056ef5", settingKey: "yli_math_visible"        },
-  apodesmeusi: { title: "Σύσταση",                       subtitle: "Αποδέσμευση",                    color: "#059669", settingKey: "yli_apodesmeusi_visible" },
+  apodesmeusi: { title: "Διαγωνίσματα",                  subtitle: "Πρόγραμμα",                      color: "#059669", settingKey: "yli_apodesmeusi_visible" },
 };
 
 export default function AdminYliPage() {

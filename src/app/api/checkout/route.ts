@@ -69,7 +69,15 @@ export async function POST(req: Request) {
       mode: "payment",
       locale: "el",
       customer_email: user.email,
-      line_items: [{ price: pkg.stripe_price_id, quantity: 1 }],
+      line_items: [
+        {
+          price: pkg.stripe_price_id,
+          quantity: 1,
+          ...(process.env.STRIPE_VAT_RATE_ID
+            ? { tax_rates: [process.env.STRIPE_VAT_RATE_ID] }
+            : {}),
+        },
+      ],
       success_url: `${siteUrl}/account?purchase=success`,
       cancel_url: `${siteUrl}/paketa`,
       metadata: {

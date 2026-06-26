@@ -19,6 +19,13 @@ export function PaywallPrompt({ feature = "αυτή τη λειτουργία" }
       >
         Δείτε τα πακέτα →
       </Link>
+      <p className="mt-5 text-xs text-ink/40">
+        Μπορείτε ήδη να συμπληρώσετε τα στοιχεία σας στο{" "}
+        <Link href="/account/profile" className="text-[#7c00d0] font-bold hover:underline">
+          Προφίλ
+        </Link>
+        {" "}ανεξαρτήτως πακέτου.
+      </p>
     </div>
   );
 }
