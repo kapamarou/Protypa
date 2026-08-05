@@ -15,7 +15,7 @@ export default async function AdminParentsPage() {
 
   // Fetch purchases + packages separately — avoids PostgREST implicit-FK join.
   type PurchaseRow = { user_id: string; expires_at: string; packages: { name_el: string; package_type: string } | null };
-  let purchaseMap: Record<string, PurchaseRow[]> = {};
+  const purchaseMap: Record<string, PurchaseRow[]> = {};
   if (parents && parents.length > 0) {
     const { data: purchases } = await supabase
       .from("purchases")
