@@ -678,16 +678,8 @@ function Packages() {
                 <div className="relative mt-8 flex items-end gap-2"><span className="font-display text-7xl leading-none">{plan.price}</span><span className={`pb-2 text-xs ${plan.featured ? "text-paper/55" : "text-ink/45"}`}>/ μήνα</span></div>
                 <div className={`relative mt-3 inline-flex w-fit rounded-full px-4 py-2 text-xs font-black ${plan.featured ? "bg-white/10 text-[#c8ff00]" : "bg-white text-ink"}`}>{plan.students}</div>
                 <ul className="relative mt-8 flex-1 space-y-4">{benefits.map((benefit) => <li key={benefit} className={`flex items-center gap-3 text-sm font-semibold ${plan.featured ? "text-paper/75" : "text-ink/65"}`}><span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-black ${plan.featured ? "bg-[#c8ff00] text-ink" : "text-white"}`} style={plan.featured ? undefined : { backgroundColor: plan.color }}>✓</span>{benefit}</li>)}</ul>
-                <Link
-  href="/paketa"
-  className={`relative mt-9 flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-sm font-black uppercase tracking-wider transition hover:-translate-y-0.5 ${
-    plan.featured
-      ? "bg-[#c8ff00] text-ink"
-      : "bg-ink !text-white"
-  }`}
->
-  Δείτε το πακέτο <span>→</span>
-</Link><div className="absolute bottom-0 left-0 h-2 w-full origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100" style={{ backgroundColor: plan.featured ? "#c8ff00" : plan.color }} />
+                <Link href="/paketa" className={`relative mt-9 flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-sm font-black uppercase tracking-wider transition hover:-translate-y-0.5 ${plan.featured ? "bg-[#c8ff00] text-ink" : "bg-ink bg-ink text-white"}`}>Δείτε το πακέτο <span>→</span></Link>
+                <div className="absolute bottom-0 left-0 h-2 w-full origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100" style={{ backgroundColor: plan.featured ? "#c8ff00" : plan.color }} />
               </div>
             </article>
           ))}
