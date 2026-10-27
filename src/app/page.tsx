@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { el } from "@/lib/i18n/el";
 import HeroSlider from "@/components/HeroSlider";
+import TestimonialsCarousel from "@/components/TestimonialsCarousel";
+import PricingPackages from "@/components/PricingPackages";
 
 export const metadata: Metadata = {
   title: {
@@ -21,8 +23,8 @@ export default function HomePage() {
       <ProblemSolution />
       <ForWhom />
       <DemoShowcase />
-      <Testimonials />
-      <Packages />
+      <TestimonialsCarousel />
+      <PricingPackages />
     </div>
   );
 }
@@ -611,92 +613,8 @@ function DemoShowcase() {
 
 /* ─── TESTIMONIALS ─────────────────────────────────────────────────────── */
 
-function Testimonials() {
-  const items = [
-    { quote: "Προσθέστε εδώ μια σύντομη, συγκεκριμένη μαρτυρία για το πώς η ανάλυση βοήθησε τον εκπαιδευτικό να εντοπίσει αδυναμίες.", name: "Όνομα συνεργάτη", role: "Ιδιοκτήτης φροντιστηρίου" },
-    { quote: "Προσθέστε μια πραγματική εμπειρία σχετικά με την εξοικονόμηση χρόνου και την καλύτερη ενημέρωση των γονέων.", name: "Όνομα συνεργάτη", role: "Εκπαιδευτικός" },
-    { quote: "Προσθέστε μια μαρτυρία με συγκεκριμένο αποτέλεσμα, όπως βελτίωση επίδοσης ή μεγαλύτερη διατήρηση μαθητών.", name: "Όνομα συνεργάτη", role: "Υπεύθυνος σπουδών" },
-  ];
-  const colors = [
-    { bg: "#e7f1ff", accent: "#056ef5", initials: "ΙΦ" },
-    { bg: "#f1e7ff", accent: "#7c00d0", initials: "ΕΚ" },
-    { bg: "#efffc7", accent: "#75b900", initials: "ΥΣ" },
-  ];
-
-  return (
-    <section className="relative overflow-hidden bg-white py-16 md:py-24">
-      <div className="pointer-events-none absolute left-1/3 top-0 h-72 w-72 rounded-full bg-[#c8ff00]/15 blur-3xl" />
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-          <div className="max-w-3xl"><div className="text-[10px] font-black uppercase tracking-[0.28em] text-brand">Εμπειρίες συνεργατών</div><h2 className="mt-4 font-display text-4xl leading-none text-ink md:text-6xl">Λόγια που έχουν <span className="text-[#7c00d0]">μετρήσιμη αξία.</span></h2></div>
-          <p className="max-w-md rounded-2xl bg-[#f5f7fb] px-5 py-4 text-xs leading-relaxed text-ink/50">Τα κείμενα είναι προσωρινά και πρέπει να αντικατασταθούν με πραγματικές, επώνυμες μαρτυρίες πριν από τη δημοσίευση.</p>
-        </div>
-        <div className="mt-14 grid gap-8 lg:grid-cols-3">
-          {items.map((item, i) => (
-            <figure key={i} className={`group relative flex min-h-[330px] flex-col overflow-hidden rounded-[2.25rem] border-2 border-white p-8 shadow-[0_18px_50px_rgba(20,30,60,.1)] transition duration-300 hover:-translate-y-2 ${i === 1 ? "lg:rotate-[.7deg]" : i === 0 ? "lg:-rotate-[.7deg]" : "lg:rotate-[.4deg]"}`} style={{ backgroundColor: colors[i].bg }}>
-              <div className="absolute -right-5 -top-8 font-display text-[11rem] leading-none opacity-10" style={{ color: colors[i].accent }}>“</div>
-              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl text-5xl leading-none text-white shadow-lg transition group-hover:-rotate-6 group-hover:scale-110" style={{ backgroundColor: colors[i].accent }}>“</div>
-              <blockquote className="relative mt-7 flex-1 text-lg font-bold leading-relaxed text-ink/75">{item.quote}</blockquote>
-              <figcaption className="relative mt-8 flex items-center gap-4 border-t border-ink/10 pt-5">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full text-xs font-black text-white" style={{ backgroundColor: colors[i].accent }}>{colors[i].initials}</div>
-                <div><div className="font-black text-ink">{item.name}</div><div className="mt-1 text-xs text-ink/45">{item.role}</div></div>
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 /* ─── PACKAGES ─────────────────────────────────────────────────────────── */
 
-function Packages() {
-  const plans = [
-    { name: "Basic", price: "29€", students: "Έως 30 μαθητές", featured: false, color: "#056ef5", pale: "#e7f1ff", number: "01" },
-    { name: "Pro", price: "59€", students: "Έως 100 μαθητές", featured: true, color: "#7c00d0", pale: "#7c00d0", number: "02" },
-    { name: "Premium", price: "99€", students: "Απεριόριστοι μαθητές", featured: false, color: "#75b900", pale: "#efffc7", number: "03" },
-  ];
-  const benefits = ["Θέματα προσομοιώσεων", "Προγραμματισμός ύλης", "Καταχώριση απαντήσεων", "Ανάλυση & αναφορές"];
-
-  return (
-    <section id="paketa" className="relative overflow-hidden bg-[#f5f7fb] py-16 md:py-24">
-      <div className="pointer-events-none absolute -left-24 bottom-0 h-80 w-80 rounded-full bg-brand/10 blur-3xl" />
-      <div className="pointer-events-none absolute -right-24 top-10 h-80 w-80 rounded-full bg-[#7c00d0]/10 blur-3xl" />
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="mx-auto max-w-3xl text-center"><div className="text-[10px] font-black uppercase tracking-[0.28em] text-brand">Πακέτα</div><h2 className="mt-4 font-display text-4xl leading-none text-ink md:text-6xl">Το σωστό πακέτο για <span className="text-[#7c00d0]">κάθε ομάδα.</span></h2><p className="mx-auto mt-5 max-w-2xl text-ink/55">Απλές επιλογές για κάθε μέγεθος εκπαιδευτικού οργανισμού, χωρίς περιττή πολυπλοκότητα.</p></div>
-        <div className="mt-14 grid items-stretch gap-8 lg:grid-cols-3">
-          {plans.map((plan) => (
-            <article key={plan.name} className={`group relative overflow-visible rounded-[2.4rem] border-2 p-3 shadow-[0_18px_50px_rgba(20,30,60,.1)] transition duration-300 hover:-translate-y-2 ${plan.featured ? "border-[#7c00d0] lg:-translate-y-4 lg:hover:-translate-y-6" : "border-white"}`} style={{ backgroundColor: plan.pale }}>
-              {plan.featured && <div className="absolute left-1/2 top-0 z-20 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border-4 border-[#f5f7fb] bg-[#c8ff00] px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-ink shadow-lg">Το προτείνουμε</div>}
-              <div className={`relative flex min-h-[500px] flex-col overflow-hidden rounded-[1.8rem] p-8 ${plan.featured ? "bg-[#7c00d0] text-paper" : "bg-white/75 text-ink"}`}>
-                <div className={`absolute -right-4 -top-8 font-display text-[9rem] leading-none ${plan.featured ? "text-white/5" : "text-ink/[.05]"}`}>{plan.number}</div>
-                <div className="relative flex items-center justify-between">
-                  <div><div className={`text-[10px] font-black uppercase tracking-[.22em] ${plan.featured ? "text-[#c8ff00]" : ""}`} style={plan.featured ? undefined : { color: plan.color }}>Πακέτο {plan.number}</div><h3 className="mt-2 font-display text-4xl">{plan.name}</h3></div>
-                  <div className={`flex h-14 w-14 rotate-6 items-center justify-center rounded-2xl text-2xl font-black shadow-lg transition group-hover:-rotate-6 ${plan.featured ? "bg-[#c8ff00] text-ink" : "text-white"}`} style={plan.featured ? undefined : { backgroundColor: plan.color }}>✦</div>
-                </div>
-                <div className="relative mt-8 flex items-end gap-2"><span className="font-display text-7xl leading-none">{plan.price}</span><span className={`pb-2 text-xs ${plan.featured ? "text-paper/55" : "text-ink/45"}`}>/ μήνα</span></div>
-                <div className={`relative mt-3 inline-flex w-fit rounded-full px-4 py-2 text-xs font-black ${plan.featured ? "bg-white/10 text-[#c8ff00]" : "bg-white text-ink"}`}>{plan.students}</div>
-                <ul className="relative mt-8 flex-1 space-y-4">{benefits.map((benefit) => <li key={benefit} className={`flex items-center gap-3 text-sm font-semibold ${plan.featured ? "text-paper/75" : "text-ink/65"}`}><span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-black ${plan.featured ? "bg-[#c8ff00] text-ink" : "text-white"}`} style={plan.featured ? undefined : { backgroundColor: plan.color }}>✓</span>{benefit}</li>)}</ul>
-                <Link
-  href="/paketa"
-  className={`relative mt-9 flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-sm font-black uppercase tracking-wider transition hover:-translate-y-0.5 ${
-    plan.featured
-      ? "bg-[#c8ff00] text-ink"
-      : "bg-ink !text-white"
-  }`}
->
-  Δείτε το πακέτο <span>→</span>
-</Link><div className="absolute bottom-0 left-0 h-2 w-full origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100" style={{ backgroundColor: plan.featured ? "#c8ff00" : plan.color }} />
-              </div>
-            </article>
-          ))}
-        </div>
-        <p className="mt-7 text-center text-xs text-ink/40">Οι τιμές και οι παροχές χρειάζονται τελικό έλεγχο πριν από τη δημοσίευση.</p>
-      </div>
-    </section>
-  );
-}
 
 /* ─── FAQ ──────────────────────────────────────────────────────────────── */
 
