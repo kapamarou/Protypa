@@ -1,286 +1,168 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { el } from "@/lib/i18n/el";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getAccountType } from "@/lib/entitlements";
-import type { AccountType, Package } from "@/lib/types";
-import { PlansClient } from "./PlansClient";
+import PricingPackages from "@/components/PricingPackages";
 
 export const metadata: Metadata = {
-  title: "Πακέτα εγγραφής",
+  title: "Πακέτα εγγραφής | Protupa",
   description:
-    "Πακέτα για γονείς και φροντιστήρια: πρόσβαση στα διαγωνίσματα προσομοίωσης, αυτόματη διόρθωση και ανάλυση επίδοσης μαθητών. Ετήσια συνδρομή με δυνατότητα αναβάθμισης.",
+    "Επιλέξτε το πακέτο Protupa για γονείς ή φροντιστήρια και αποκτήστε πρόσβαση σε διαγωνίσματα, αναλύσεις και στατιστικά μαθητών.",
   alternates: { canonical: "/paketa" },
 };
 
-export const dynamic = "force-dynamic";
+const comparisonRows = [
+  ["Πρόσβαση σε 3+2 διαγωνίσματα", true, false],
+  ["Πρόσβαση σε 10 διαγωνίσματα", false, true],
+  ["Πρόσβαση σε όλα τα παλιά θέματα", true, true],
+  ["Άδεια για 1 μαθητή", true, false],
+  ["Αριθμός αδειών της επιλογής σας", false, true],
+  ["Στατιστικά μαθητή", true, true],
+  ["Διάγραμμα προσωπικής πορείας", true, true],
+  ["AI σύνοψη επίδοσης μαθητή", true, true],
+  ["Συνολικά στατιστικά φροντιστηρίου", false, true],
+  ["Σύγκριση με άλλα φροντιστήρια Ελλάδας", false, true],
+  ["Θέση σε σχέση με προηγούμενες εξετάσεις", false, true],
+] as const;
 
-export default async function PackagesPage() {
-  const supabase = await createSupabaseServerClient();
-  const [rawPackages, user] = await Promise.all([
-    supabase
-      ? supabase
-          .from("packages")
-          .select("*")
-          .in("package_type", ["parent", "school"])
-          .order("price_cents", { ascending: true })
-          .then((r) => r.data)
-      : Promise.resolve(null),
-    supabase
-      ? supabase.auth.getUser().then((r) => r.data.user)
-      : Promise.resolve(null),
-  ]);
+const faqs = [
+  {
+    question: "Πόσο διαρκεί η πρόσβαση;",
+    answer:
+      "Τα διαθέσιμα πακέτα είναι ετήσια. Πριν από την ολοκλήρωση της αγοράς βλέπετε καθαρά τη διάρκεια και τις παροχές του πακέτου που επιλέξατε.",
+  },
+  {
+    question: "Πόσους μαθητές μπορώ να προσθέσω;",
+    answer:
+      "Το πακέτο γονέα αφορά έναν μαθητή. Στο πακέτο φροντιστηρίου επιλέγετε 1–10, 11–20 ή 21–30 μαθητές και μπορείτε να προσθέσετε επέκταση πέντε μαθητών.",
+  },
+  {
+    question: "Μπορώ να αλλάξω πακέτο αργότερα;",
+    answer:
+      "Ναι. Το πακέτο φροντιστηρίου μπορεί να προσαρμοστεί καθώς αυξάνονται ή μειώνονται οι ανάγκες του οργανισμού σας.",
+  },
+  {
+    question: "Πώς γίνεται η πληρωμή;",
+    answer:
+      "Η πληρωμή πραγματοποιείται με κάρτα μέσω ασφαλούς περιβάλλοντος πληρωμών. Τα στοιχεία της κάρτας δεν αποθηκεύονται από το Protupa.",
+  },
+  {
+    question: "Λαμβάνω παραστατικό;",
+    answer:
+      "Ναι, το αντίστοιχο παραστατικό αποστέλλεται ηλεκτρονικά μετά την ολοκλήρωση της αγοράς.",
+  },
+];
 
-  const packages = (rawPackages as Package[]) ?? [];
-  const accountType: AccountType | null = user
-    ? await getAccountType(user.id)
-    : null;
-
+function Availability({ enabled }: { enabled: boolean }) {
   return (
-    <div>
-      <Hero />
-      <PlansClient packages={packages} signedIn={!!user} accountType={accountType} />
-      <Compare packages={packages} />
-      <Guarantee />
-      <Faqs />
-    </div>
-  );
-}
-
-/* ─── HERO ─────────────────────────────────────────────────────────────── */
-
-function Hero() {
-  return (
-    <section
-      className="relative pt-12 pb-14 md:pt-18 md:pb-20 clip-x overflow-hidden"
-      style={{ backgroundImage: "url(/Packages.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}
+    <span
+      className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full text-xs font-black ${
+        enabled ? "bg-[#c8ff00] text-ink" : "bg-ink/5 text-ink/25"
+      }`}
+      aria-label={enabled ? "Περιλαμβάνεται" : "Δεν περιλαμβάνεται"}
     >
-      <div className="absolute inset-0 bg-brand/80" />
-      {/* Sprite decorations */}
-      <img src="/TransparentAssets/Asset 18.png" alt="" aria-hidden="true" className="pointer-events-none select-none absolute bottom-4 right-6 w-32 md:w-52 opacity-75 rotate-6 hidden sm:block" />
-      <img src="/TransparentAssets/Asset 22.png" alt="" aria-hidden="true" className="pointer-events-none select-none absolute top-6 right-[45%] w-16 md:w-24 opacity-65 -rotate-12 hidden lg:block" />
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="text-[10px] font-bold tracking-[0.25em] uppercase text-paper mb-4">
-          {el.packages.eyebrow}
-        </div>
-        <h1 className="font-display text-[clamp(2.5rem,7vw,6rem)] leading-none text-ink">
-          {el.packages.titleA} {el.packages.titleB}
-          <br />
-          <span className="text-paper">{el.packages.titleC} {el.packages.titleD}</span>
-        </h1>
-      </div>
-    </section>
+      {enabled ? "✓" : "—"}
+    </span>
   );
 }
 
-
-/* ─── COMPARE ──────────────────────────────────────────────────────────── */
-
-// 2-column comparison: Parent vs Φροντιστήριο.
-// The school column merges all 4 school tiers since they have identical
-// feature sets — only the student limit changes.
-function Compare({ packages }: { packages: Package[] }) {
-  const parentPkg = packages.find((p) => p.package_type === "parent");
-  // Use the highest school tier as the representative — shows "Έως 25 μαθητές"
-  // instead of "Έως 10 μαθητές", which reflects the ceiling of what schools can buy.
-  const schoolPkg = packages
-    .filter((p) => p.package_type === "school")
-    .sort((a, b) => (b.max_students ?? 0) - (a.max_students ?? 0))[0];
-
-  // Union of all feature labels across the two columns, preserving order.
-  // Exclude stale/inaccurate labels that have been superseded by the new feature set.
-  const HIDDEN_LABELS = new Set(["Στατιστικά για κάθε παιδί"]);
-  const seen = new Set<string>();
-  const allFeatureLabels: string[] = [];
-  for (const pkg of [parentPkg, schoolPkg]) {
-    if (!pkg) continue;
-    for (const f of pkg.features) {
-      if (!seen.has(f.label) && !HIDDEN_LABELS.has(f.label)) {
-        seen.add(f.label);
-        allFeatureLabels.push(f.label);
-      }
-    }
-  }
-
-  // These features belong to both packages per the new spec; force ✓ regardless of stale DB data.
-  const BOTH_INCLUDED = new Set([
-    "Διάγραμμα προσωπικής πορείας",
-    "AI σύνοψη επίδοσης μαθητή",
-    "Στατιστικά μαθητή",
-    "Πρόσβαση σε όλα τα παλιά θέματα",
-  ]);
-
-  function included(pkg: Package | undefined, label: string): boolean {
-    if (!pkg) return false;
-    if (BOTH_INCLUDED.has(label)) return true;
-    return pkg.features.some((f) => f.label === label && f.included);
-  }
-
+export default function PaketaPage() {
   return (
-    <section className="relative py-10 md:py-20 bg-[#0a0a0f] overflow-hidden">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.07]"
-        style={{
-          backgroundImage: "radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 50% at 100% 0%, rgba(5,110,245,0.10), transparent 60%)",
-        }}
-      />
-
-      <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="max-w-2xl mb-12">
-          <div className="text-[10px] font-bold tracking-[0.25em] uppercase text-brand mb-3">
-            Λεπτομέρειες
+    <main className="overflow-hidden bg-[#f5f7fb]">
+      <section className="relative bg-ink px-4 py-20 text-white md:py-28">
+        <div className="pointer-events-none absolute -left-28 -top-28 h-80 w-80 rounded-full bg-[#7c00d0]/50 blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-[#056ef5]/50 blur-3xl" />
+        <div className="relative mx-auto max-w-7xl">
+          <div className="inline-flex rotate-[-2deg] rounded-full bg-[#c8ff00] px-5 py-2 text-[10px] font-black uppercase tracking-[.24em] text-ink">
+            Επίλεξε το πακέτο σου
           </div>
-          <h2 className="font-display text-3xl md:text-6xl leading-none text-paper">
-            {el.packages.compareTitle}
-          </h2>
-          <p className="mt-4 text-muted text-base">
-            Το πακέτο γονέα παρέχει πρόσβαση σε 3+2 διαγωνίσματα για 1 μαθητή.
-            Το πακέτο φροντιστηρίου παρέχει πρόσβαση σε 10 διαγωνίσματα με συνολικά
-            στατιστικά, σύγκριση με άλλα φροντιστήρια Ελλάδας, και κλιμακούμενο αριθμό μαθητών.
+          <h1 className="mt-7 max-w-5xl font-display text-5xl leading-[.92] md:text-8xl">
+            Διάλεξε το πλάνο που <span className="text-[#c8ff00]">σου ταιριάζει.</span>
+          </h1>
+          <p className="mt-7 max-w-2xl text-base leading-relaxed text-white/65 md:text-lg">
+            Δύο ξεκάθαρα πακέτα: ένα για γονείς που παρακολουθούν την πρόοδο του παιδιού τους και ένα για φροντιστήρια που προσαρμόζεται στον αριθμό των μαθητών.
+          </p>
+          <a href="#epilogi-paketou" className="mt-9 inline-flex items-center gap-3 rounded-full border border-white/20 bg-white px-6 py-4 text-sm font-black text-ink transition hover:-translate-y-1">
+            Δείτε τα πακέτα <span aria-hidden="true">↓</span>
+          </a>
+        </div>
+      </section>
+
+      <div id="epilogi-paketou">
+        <PricingPackages />
+      </div>
+
+      <section className="relative px-4 py-16 md:py-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid items-end gap-6 md:grid-cols-[1fr_.7fr]">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-[.28em] text-[#056ef5]">Λεπτομέρειες</div>
+              <h2 className="mt-4 max-w-3xl font-display text-4xl leading-none text-ink md:text-6xl">
+                Σύγκριση <span className="text-[#7c00d0]">χαρακτηριστικών.</span>
+              </h2>
+            </div>
+            <p className="text-sm leading-relaxed text-ink/55">
+              Δείτε γρήγορα τι περιλαμβάνει κάθε επιλογή και επιλέξτε το πακέτο που ανταποκρίνεται στις πραγματικές σας ανάγκες.
+            </p>
+          </div>
+
+          <div className="mt-10 overflow-hidden rounded-[2rem] border-2 border-white bg-white/80 shadow-[0_20px_60px_rgba(20,30,60,.1)]">
+            <div className="grid grid-cols-[1fr_90px_110px] bg-ink px-4 py-5 text-xs font-black text-white sm:grid-cols-[1fr_150px_180px] sm:px-7">
+              <div>Χαρακτηριστικό</div>
+              <div className="text-center">Γονέας</div>
+              <div className="text-center">Φροντιστήριο</div>
+            </div>
+            {comparisonRows.map(([label, parent, school], index) => (
+              <div key={label} className={`grid grid-cols-[1fr_90px_110px] items-center px-4 py-4 text-sm sm:grid-cols-[1fr_150px_180px] sm:px-7 ${index !== comparisonRows.length - 1 ? "border-b border-ink/10" : ""}`}>
+                <div className="pr-3 font-semibold text-ink/70">{label}</div>
+                <Availability enabled={parent} />
+                <Availability enabled={school} />
+              </div>
+            ))}
+          </div>
+          <p className="mt-5 text-center text-xs text-ink/45">
+            Το πακέτο φροντιστηρίου διατίθεται για 1–10, 11–20 ή 21–30 μαθητές. Κάθε επέκταση πέντε μαθητών κοστίζει 30€ + ΦΠΑ.
           </p>
         </div>
+      </section>
 
-        <div className="relative overflow-x-auto rounded-3xl ring-1 ring-white/10 bg-white/[0.02]">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left font-display text-sm md:text-lg text-paper px-3 py-4 md:px-6 md:py-5 min-w-[180px]">
-                  Χαρακτηριστικά
-                </th>
-                <th className="text-center px-3 py-4 md:px-6 md:py-5 font-display text-base md:text-xl text-paper min-w-[120px]">
-                  Γονέας
-                </th>
-                <th className="text-center px-3 py-4 md:px-6 md:py-5 font-display text-base md:text-xl text-paper min-w-[120px]">
-                  Φροντιστήριο
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {allFeatureLabels.map((label, i) => (
-                <tr key={label} className={i % 2 === 0 ? "bg-white/[0.02]" : "bg-transparent"}>
-                  <td className="px-3 py-3 md:px-6 md:py-4 text-paper text-xs md:text-sm">{label}</td>
-                  <td className="text-center px-3 py-3 md:px-6 md:py-4">
-                    <CheckCell ok={included(parentPkg, label)} />
-                  </td>
-                  <td className="text-center px-3 py-3 md:px-6 md:py-4">
-                    <CheckCell ok={included(schoolPkg, label)} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <p className="mt-4 text-xs text-paper/60 text-center">
-          Το πακέτο φροντιστηρίου έχει 3 επίπεδα (1–10 / 11–20 / 21–30 μαθητές). Κάθε επέκταση +5 μαθητών κοστίζει 30€ + ΦΠΑ.
-        </p>
-      </div>
-    </section>
-  );
-}
-
-function CheckCell({ ok }: { ok: boolean }) {
-  return ok ? (
-    <span className="inline-grid place-items-center w-7 h-7 rounded-full bg-accent text-ink font-black text-xs leading-none">
-      ✓
-    </span>
-  ) : (
-    <span className="inline-grid place-items-center w-7 h-7 rounded-full ring-1 ring-white/15 text-white/30 text-xs leading-none">
-      —
-    </span>
-  );
-}
-
-/* ─── GUARANTEE ───────────────────────────────────────────────────────── */
-
-function Guarantee() {
-  return (
-    <section className="relative py-10 md:py-20 bg-[#7c00d0] clip-x overflow-hidden">
-      {/* Sprite decorations */}
-      <img src="/TransparentAssets/Asset 20.png" alt="" aria-hidden="true" className="pointer-events-none select-none absolute bottom-6 right-8 w-32 md:w-48 opacity-75 rotate-12 hidden sm:block" />
-      <div className="mx-auto max-w-5xl px-4 sm:px-6">
-        <div className="grid md:grid-cols-12 gap-10 items-center">
-          <div className="md:col-span-4 flex items-center justify-center">
-            <img src="/TransparentAssets/Asset 14.png" alt="" aria-hidden="true" className="w-48 md:w-72 opacity-80" />
-          </div>
-
-          <div className="md:col-span-8">
-            <div className="text-[10px] font-bold tracking-[0.25em] uppercase text-white mb-3">
-              Καμία δέσμευση
-            </div>
-            <h2 className="font-display text-3xl md:text-6xl leading-none text-white">
-              {el.packages.guaranteeTitle}
+      <section className="px-4 pb-16 md:pb-24">
+        <div className="relative mx-auto grid max-w-7xl overflow-hidden rounded-[2.5rem] bg-[#056ef5] p-8 text-white shadow-[0_24px_70px_rgba(5,110,245,.25)] md:grid-cols-[1fr_.55fr] md:p-14">
+          <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full border-[45px] border-[#c8ff00]/15" />
+          <div className="relative">
+            <div className="text-[10px] font-black uppercase tracking-[.25em] text-[#c8ff00]">Καμία δέσμευση</div>
+            <h2 className="mt-4 max-w-3xl font-display text-4xl leading-none md:text-6xl">
+              Δοκιμάστε το Protupa χωρίς ρίσκο.
             </h2>
-            <p className="mt-6 text-base text-white max-w-xl leading-relaxed">
-              {el.packages.guaranteeBody}
+            <p className="mt-5 max-w-xl text-sm leading-relaxed text-white/70 md:text-base">
+              Δεν χρειάζεστε κάρτα για να γνωρίσετε το demo. Δείτε πρώτα πώς λειτουργεί η πλατφόρμα και επιλέξτε πακέτο όταν είστε σίγουροι.
             </p>
-            <Link
-              href="/demo"
-              className="group inline-flex items-center gap-2 mt-8 px-7 py-4 rounded-full bg-[#056ef5] !text-white border-2 border-[#056ef5] font-black uppercase tracking-wider text-sm hover:bg-[#0451b8] hover:-translate-y-0.5 transition-all"
-            >
-              {el.packages.guaranteeCta}
+          </div>
+          <div className="relative mt-8 flex items-end md:mt-0 md:justify-end">
+            <Link href="/demo" className="inline-flex items-center gap-3 rounded-full bg-[#c8ff00] px-7 py-4 text-sm font-black uppercase tracking-wider text-ink transition hover:-translate-y-1">
+              Παίξτε με το demo <span aria-hidden="true">→</span>
             </Link>
           </div>
         </div>
-      </div>
-    </section>
-  );
-}
+      </section>
 
-/* ─── FAQS ─────────────────────────────────────────────────────────────── */
-
-function Faqs() {
-  return (
-    <section className="relative py-10 md:py-20 bg-[#056ef5] text-paper">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6">
-        <div className="grid md:grid-cols-12 gap-12">
-          <div className="md:col-span-4">
-            <div className="text-[10px] font-bold tracking-[0.25em] uppercase text-paper mb-3">
-              FAQ
-            </div>
-            <h2 className="font-display text-4xl md:text-5xl leading-none text-paper">
-              {el.packages.faqTitle}
-            </h2>
-            <Link
-              href="/faq"
-              className="inline-flex items-center gap-1.5 mt-6 text-sm font-bold !text-[#ffffff] hover:!text-[#c8ff00] transition-colors uppercase tracking-wider"
-            >
-              {el.packages.faqMore} →
-            </Link>
+      <section className="bg-white px-4 py-16 md:py-24">
+        <div className="mx-auto max-w-4xl">
+          <div className="text-center">
+            <div className="text-[10px] font-black uppercase tracking-[.28em] text-[#7c00d0]">FAQ</div>
+            <h2 className="mt-4 font-display text-4xl leading-none text-ink md:text-6xl">Συχνές απορίες.</h2>
           </div>
-
-          <div className="md:col-span-8 space-y-3">
-            {el.packages.faqs.map((item, i) => (
-              <details
-                key={i}
-                className="group rounded-2xl border border-white/20 bg-white/10 p-6 hover:border-white/40 transition-colors [&_summary::-webkit-details-marker]:hidden"
-              >
-                <summary className="flex items-center justify-between gap-4 cursor-pointer">
-                  <span className="font-display text-lg md:text-xl text-paper">
-                    {item.q}
-                  </span>
-                  <span className="flex-shrink-0 w-8 h-8 rounded-full border border-white/50 text-paper grid place-items-center text-xl group-open:bg-[#c8ff00] group-open:text-ink group-open:border-[#c8ff00] group-open:rotate-45 transition-all">
-                    +
-                  </span>
+          <div className="mt-10 space-y-3">
+            {faqs.map((faq, index) => (
+              <details key={faq.question} className="group rounded-[1.5rem] border border-ink/10 bg-[#f5f7fb] px-6 py-5 open:bg-[#f1e7ff]">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-5 font-black text-ink">
+                  <span>{faq.question}</span>
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg ${index % 2 ? "bg-[#7c00d0] text-white" : "bg-[#c8ff00] text-ink"}`} aria-hidden="true">+</span>
                 </summary>
-                <p className="mt-4 text-paper leading-relaxed text-sm">
-                  {item.a}
-                </p>
+                <p className="max-w-2xl pt-4 text-sm leading-relaxed text-ink/60">{faq.answer}</p>
               </details>
             ))}
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </main>
   );
 }
