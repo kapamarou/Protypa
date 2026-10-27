@@ -66,7 +66,35 @@ export default function PricingPackages() {
   const [selected, setSelected] = useState(0);
   const [parentExpanded, setParentExpanded] = useState(false);
   const [schoolExpanded, setSchoolExpanded] = useState(false);
+  const [accessPanel, setAccessPanel] = useState<"parent" | "school" | null>(null);
   const schoolPlan = schoolOptions[selected];
+
+  const accountActions = (plan: "parent" | "school") => (
+    <div
+      className="relative mt-6 rounded-[1.4rem] border border-ink/10 bg-white p-4 text-center shadow-[0_14px_35px_rgba(20,30,60,.12)]"
+      aria-live="polite"
+    >
+      <p className="mb-3 text-sm font-black text-ink/80">
+        Χρειάζεστε λογαριασμό για να συνεχίσετε
+      </p>
+      <div className="grid gap-2">
+        <Link
+          href="/signup"
+          className={`flex items-center justify-center rounded-full px-5 py-3 text-xs font-black uppercase tracking-wider !text-white transition hover:-translate-y-0.5 hover:!text-white ${
+            plan === "parent" ? "bg-[#7c00d0] hover:bg-[#6500ad]" : "bg-[#056ef5] hover:bg-[#0058c8]"
+          }`}
+        >
+          Δημιουργία λογαριασμού
+        </Link>
+        <Link
+          href="/signin?next=/paketa"
+          className="flex items-center justify-center rounded-full border border-[#1b1b1b] bg-[#1b1b1b] px-5 py-3 text-xs font-black !text-white transition hover:-translate-y-0.5 hover:bg-black hover:!text-white"
+        >
+          Σύνδεση
+        </Link>
+      </div>
+    </div>
+  );
 
   return (
     <section id="paketa" className="relative overflow-hidden bg-[#f5f7fb] py-16 md:py-24">
@@ -113,7 +141,8 @@ export default function PricingPackages() {
                 {parentExpanded ? "Λιγότερα" : "Περισσότερα"}<span className={`transition ${parentExpanded ? "rotate-180" : ""}`}>↓</span>
               </button>
 
-              <Link href="/paketa" className="relative mt-7 flex w-full items-center justify-center gap-3 rounded-full bg-[#7c00d0] px-6 py-4 text-sm font-black text-white shadow-lg transition hover:-translate-y-1 hover:bg-[#6500ad]">Αποκτήστε πρόσβαση <span aria-hidden="true">→</span></Link>
+              {accessPanel === "parent" && accountActions("parent")}
+              <button type="button" onClick={() => setAccessPanel((value) => value === "parent" ? null : "parent")} className="relative mt-7 flex w-full items-center justify-center gap-3 rounded-full bg-[#7c00d0] px-6 py-4 text-sm font-black text-white shadow-lg transition hover:-translate-y-1 hover:bg-[#6500ad]" aria-expanded={accessPanel === "parent"}>Αποκτήστε πρόσβαση <span aria-hidden="true">→</span></button>
             </div>
           </article>
 
@@ -153,7 +182,8 @@ export default function PricingPackages() {
                 {schoolExpanded ? "Λιγότερα" : "Περισσότερα"}<span className={`transition ${schoolExpanded ? "rotate-180" : ""}`}>↓</span>
               </button>
 
-              <Link href="/paketa" className="relative mt-7 flex w-full items-center justify-center gap-3 rounded-full bg-[#056ef5] px-6 py-4 text-sm font-black text-white shadow-lg transition hover:-translate-y-1 hover:bg-[#0058c8]">Αποκτήστε πρόσβαση <span aria-hidden="true">→</span></Link>
+              {accessPanel === "school" && accountActions("school")}
+              <button type="button" onClick={() => setAccessPanel((value) => value === "school" ? null : "school")} className="relative mt-7 flex w-full items-center justify-center gap-3 rounded-full bg-[#056ef5] px-6 py-4 text-sm font-black text-white shadow-lg transition hover:-translate-y-1 hover:bg-[#0058c8]" aria-expanded={accessPanel === "school"}>Αποκτήστε πρόσβαση <span aria-hidden="true">→</span></button>
             </div>
           </article>
         </div>
