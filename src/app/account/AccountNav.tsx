@@ -16,6 +16,7 @@ export function AccountNav({ accountType = "school" }: { accountType?: "school" 
         <TabLink href="/account/school"    active={path.startsWith("/account/school")}>Φροντιστήριο</TabLink>
       )}
       <TabLink href="/account/grading"   active={path.startsWith("/account/grading")}>Διαγωνίσματα</TabLink>
+      {isParent && <TabLink href="/account/receipts" active={path.startsWith("/account/receipts")}>Αποδείξεις</TabLink>}
       <TabLink href="/account/profile"   active={path.startsWith("/account/profile")}>Προφίλ</TabLink>
     </nav>
   );

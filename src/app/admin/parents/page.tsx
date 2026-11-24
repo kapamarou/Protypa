@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -61,11 +62,11 @@ export default async function AdminParentsPage() {
           <p className="text-white/80 text-sm">Δεν υπάρχουν εγγεγραμμένοι γονείς ακόμα.</p>
         </div>
       ) : (
-        <div className="rounded-2xl border border-white/10 overflow-hidden">
+        <div className="rounded-2xl border border-white/10 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/10 bg-white/5">
-                {["Γονέας", "Email", "Πακέτο", "Λήξη", "Εγγραφή"].map((h) => (
+                {["Γονέας", "Email", "Πακέτο", "Λήξη", "Εγγραφή", "Αποδείξεις"].map((h) => (
                   <th key={h} className="text-left px-5 py-3 text-[10px] font-bold tracking-wider uppercase text-white/45 whitespace-nowrap">
                     {h}
                   </th>
@@ -107,6 +108,9 @@ export default async function AdminParentsPage() {
                     </td>
                     <td className="px-5 py-4 text-white/55 text-xs">
                       {new Date(p.created_at).toLocaleDateString("el-GR", { day: "2-digit", month: "short", year: "numeric" })}
+                    </td>
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <Link href={`/admin/parents/${p.id}/receipts`} className="!text-[#c8ff00] text-xs font-bold">Διαχείριση →</Link>
                     </td>
                   </tr>
                 );
